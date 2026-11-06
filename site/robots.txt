@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ocarina.forja-digital.com/sitemap.xml

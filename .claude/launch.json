@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "C:\\Users\\Rene Ayala\\Documents\\zelda_ocarina\\site"],
+      "port": 8765
+    }
+  ]
+}

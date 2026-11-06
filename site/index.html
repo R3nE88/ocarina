@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partituras de Ocarina · Ocarina of Time (N64 y 3DS)</title>
+<meta name="description" content="Crea hojas de música con los botones de la ocarina de Zelda: Ocarina of Time para Nintendo 64 y 3DS. Escribe las notas o importa MIDI y MusicXML, escúchalas y descárgalas en PNG o PDF.">
+<meta name="author" content="R3nE88">
+<meta name="theme-color" content="#7a1e10">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="canonical" href="https://ocarina.forja-digital.com/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ocarina.forja-digital.com/">
+<meta property="og:title" content="Partituras de Ocarina · Ocarina of Time">
+<meta property="og:description" content="Convierte cualquier melodía o MIDI en una hoja con los botones de la ocarina, para N64 y 3DS.">
+<meta property="og:image" content="https://ocarina.forja-digital.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="fonts/almendra-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face { font-family:Almendra; font-weight:700; font-display:swap; src:url(fonts/almendra-700.woff2) format("woff2"); }
+  :root { --green:#2f6b3a; --ink:#222; --line:#d6d2c4; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.4 system-ui, "Segoe UI", sans-serif; color:var(--ink); background:#e9e5d8; }
+  .app { display:grid; grid-template-columns: 370px 1fr; height:100vh; }
+  aside { background:#fbfaf5; border-right:1px solid var(--line); padding:16px; overflow:auto; }
+  aside h1 { font-family:Almendra, Georgia, serif; color:#7a1e10; font-size:22px; margin:0 0 12px; }
+  label { display:block; margin:10px 0 4px; font-weight:600; font-size:13px; }
+  input[type=text], select, textarea, input[type=number] { width:100%; padding:6px 8px; border:1px solid #c9c4b3; border-radius:6px; font:inherit; background:#fff; }
+  textarea { height:230px; font-family: Consolas, monospace; font-size:13px; resize:vertical; }
+  .row { display:flex; gap:8px; }
+  .row > * { flex:1; }
+  .checks label { display:flex; gap:6px; align-items:center; font-weight:400; margin:4px 0; }
+  .btns { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  button { padding:7px 12px; border:0; border-radius:6px; background:var(--green); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+  button.secondary { background:#6b6556; }
+  #msg { margin-top:12px; font-size:12.5px; }
+  #msg div { padding:6px 8px; border-radius:6px; margin-bottom:4px; background:#eef3e6; }
+  #msg div.warn { background:#fdecea; color:#8a1c1c; }
+  details { margin-top:8px; font-size:12.5px; background:#f1eee3; border-radius:6px; padding:6px 10px; }
+  details summary { cursor:pointer; font-weight:600; }
+  details code { background:#fff; padding:0 3px; border-radius:3px; }
+  main { overflow:auto; padding:24px; display:flex; justify-content:center; align-items:flex-start; }
+  #sheet svg { box-shadow:0 4px 18px rgba(0,0,0,.18); background:#f4e9a6; max-width:100%; height:auto; }
+  .note { transition: transform .08s; transform-box: fill-box; transform-origin: center; }
+  .note.playing { transform: scale(1.35); }
+  .note.real.playing { transform: none; }
+  .note.real.playing .nh { fill: #d8431f; stroke: #d8431f; }
+  .note.real.playing .ocb { stroke: #d8431f; stroke-width: 9; }
+  .jump { display:none; }
+  footer.fan { margin-top:18px; font-size:11.5px; color:#777; line-height:1.45; }
+  @media (max-width: 860px) {
+    .app { display:block; height:auto; }
+    aside { border-right:0; border-bottom:1px solid var(--line); overflow:visible; }
+    main { padding:12px; overflow:visible; }
+    textarea { height:160px; }
+    input[type=text], select, textarea, input[type=number] { font-size:16px; } /* avoids iOS zoom on focus */
+    button { padding:10px 14px; }
+    .jump { display:inline-block; margin-bottom:4px; color:var(--green); font-weight:600; }
+  }
+  @media print {
+    aside { display:none; }
+    .app { display:block; height:auto; }
+    main { padding:0; }
+    #sheet svg { box-shadow:none; width:100%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <h1>Partituras de Ocarina</h1>
+    <a class="jump" href="#sheet">Ver la hoja ↓</a>
+    <label>Versión del juego</label>
+    <select id="game">
+      <option value="n64">Nintendo 64</option>
+      <option value="3ds">Nintendo 3DS</option>
+      <option value="real">Ocarina real (12 agujeros, Alto C)</option>
+    </select>
+    <label>Título</label>
+    <input type="text" id="title" value="Kakariko Village">
+    <label>Subtítulo</label>
+    <input type="text" id="subtitle" value="Music by Koji Kondo">
+
+    <label>Notas</label>
+    <textarea id="src" spellcheck="false"></textarea>
+    <details>
+      <summary>Cómo escribir las notas</summary>
+      <p>Nota + alteración + octava: <code>C4</code> <code>F#4</code> <code>Bb4</code> (Do central = <code>C4</code>).</p>
+      <p>Duración opcional con <code>:</code> → <code>:1</code> redonda, <code>:2</code> blanca, <code>:4</code> negra, <code>:8</code> corchea, <code>:16</code>. Punto: <code>:4.</code> — la duración se mantiene hasta que la cambies.</p>
+      <p>Silencio: <code>r</code> o <code>r:2</code>. Compás: <code>|</code>. Ligadura (nota que se sostiene al siguiente compás): <code>D5:2.~ | D5:2</code>. Cada renglón del texto = un renglón de la hoja. Comentarios con <code>%</code>.</p>
+      <p>Rango: <b>B3 – F5</b> en N64/3DS y <b>A3 – F5</b> en la ocarina real de 12 agujeros. Si la canción no cabe, se transpone automáticamente.</p>
+    </details>
+
+    <label>…o importar MIDI o MusicXML (.mid, .midi, .musicxml, .xml, .mxl)</label>
+    <input type="file" id="file" accept=".mid,.midi,.musicxml,.xml,.mxl">
+    <div id="trackBox" hidden>
+      <label>Pista MIDI a usar como melodía</label>
+      <select id="track"></select>
+      <div class="btns">
+        <button id="playMidi">▶ MIDI completo</button>
+        <span id="midiTime" style="align-self:center;font-variant-numeric:tabular-nums;color:#555"></span>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Transposición</label>
+        <select id="transpose"></select>
+      </div>
+      <div>
+        <label>Compases/línea</label>
+        <select id="mpl">
+          <option value="0">Auto</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option><option>6</option><option>8</option>
+        </select>
+      </div>
+      <div>
+        <label>Tempo</label>
+        <input type="number" id="tempo" value="103" min="30" max="300">
+      </div>
+    </div>
+
+    <div class="checks">
+      <label><input type="checkbox" id="names"> Mostrar nombre de las notas</label>
+      <label><input type="checkbox" id="bars"> Mostrar líneas de compás</label>
+      <label><input type="checkbox" id="ledger"> Líneas adicionales (C4 / B3)</label>
+      <label><input type="checkbox" id="fold" checked> Mover por octava las notas fuera de rango</label>
+    </div>
+
+    <div class="btns">
+      <button id="play">▶ Escuchar</button>
+      <button id="stop" class="secondary">■ Detener</button>
+      <button id="png" class="secondary">PNG</button>
+      <button id="svgBtn" class="secondary">SVG</button>
+      <button id="print" class="secondary">Imprimir / PDF</button>
+    </div>
+    <div id="msg"></div>
+    <footer class="fan">
+      Creado por <b>R3nE88</b>.<br>
+      Proyecto hecho por fans, sin afiliación con Nintendo. <i>The Legend of Zelda</i> y <i>Ocarina of Time</i> son marcas de Nintendo.
+      Todo funciona en tu navegador: tus archivos no se suben a ningún servidor.
+    </footer>
+  </aside>
+  <main><div id="sheet"></div></main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ---------- Ocarina model (from the official guide) ---------- */
+const BUTTONS = [ // base pitch of each button (MIDI)
+  { id: 'A',  midi: 62 }, // D4
+  { id: 'Cd', midi: 65 }, // F4
+  { id: 'Cr', midi: 69 }, // A4
+  { id: 'Cl', midi: 71 }, // B4
+  { id: 'Cu', midi: 74 }, // D5
+];
+let MIN_MIDI = 59, MAX_MIDI = 77; // playable range of the selected instrument (game ocarina: B3 .. F5)
+// stick up/down = ±2 semitones, R = +1, Z = -1
+
+function comboFor(midi, accidental) {
+  let best = null;
+  for (const b of BUTTONS) for (const stick of [0, 2, -2]) for (const mod of [0, 1, -1]) {
+    if (b.midi + stick + mod !== midi) continue;
+    let cost = (stick ? 1 : 0) + (mod ? 1.1 : 0);
+    if (mod && accidental && mod !== accidental) cost += 0.05; // sharp → prefer R, flat → prefer Z
+    if (mod === -1 && !accidental) cost += 0.05;
+    if (!best || cost < best.cost) best = { button: b.id, stick, mod, cost };
+  }
+  return best;
+}
+
+/* ---------- Pitch helpers ---------- */
+const STEP_SEMI = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const STEP_IDX = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+const SHARP_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FLAT_NAMES  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const ALTER = { '': 0, '#': 1, 'x': 2, '##': 2, 'b': -1, 'bb': -2 };
+
+const toMidi = (letter, alter, octave) => (octave + 1) * 12 + STEP_SEMI[letter] + alter;
+
+function spell(midi, preferFlat) {
+  const name = (preferFlat ? FLAT_NAMES : SHARP_NAMES)[((midi % 12) + 12) % 12];
+  return { letter: name[0], alter: name.length > 1 ? (name[1] === '#' ? 1 : -1) : 0, octave: Math.floor(midi / 12) - 1 };
+}
+
+const noteName = (l, a, o) => l + (a > 0 ? '#'.repeat(a) : 'b'.repeat(-a)) + o;
+
+/* ---------- Text parser ---------- */
+function parseText(src) {
+  const events = [], errors = [];
+  let beats = 1, tied = null; // tied: note ending in "~", extended by the next note of the same pitch
+  src.split(/\r?\n/).forEach((raw, li) => {
+    const line = raw.replace(/%.*$/, '').trim();
+    if (!line) return;
+    for (const tok of line.split(/\s+/)) {
+      if (tok === '|') { events.push({ type: 'bar' }); continue; }
+      let m = tok.match(/^([A-Ga-g])(##|bb|#|b|x)?(\d)(?::(\d+)(\.?))?(~?)$/);
+      if (m) {
+        if (m[4]) beats = 4 / +m[4] * (m[5] ? 1.5 : 1);
+        const letter = m[1].toUpperCase(), alter = ALTER[m[2] || ''], octave = +m[3];
+        const midi = toMidi(letter, alter, octave);
+        let note;
+        if (tied && tied.midi === midi) { tied.beats += beats; note = tied; }
+        else { note = { type: 'note', letter, alter, octave, midi, beats }; events.push(note); }
+        tied = m[6] ? note : null;
+        continue;
+      }
+      m = tok.match(/^[rR](?::(\d+)(\.?))?$/);
+      if (m) {
+        tied = null;
+        if (m[1]) beats = 4 / +m[1] * (m[2] ? 1.5 : 1);
+        events.push({ type: 'rest', beats });
+        continue;
+      }
+      errors.push(`Renglón ${li + 1}: no entiendo "${tok}"`);
+    }
+    events.push({ type: 'break' });
+  });
+  return { events, errors };
+}
+
+/* ---------- MusicXML import → text ---------- */
+function parseMusicXML(text) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('El archivo no es un MusicXML válido');
+  const title = doc.querySelector('work-title')?.textContent || doc.querySelector('movement-title')?.textContent || '';
+  const composer = doc.querySelector('creator[type="composer"]')?.textContent || '';
+  const part = doc.querySelector('part');
+  if (!part) throw new Error('No encontré ninguna parte en el MusicXML');
+
+  let divisions = 1, firstVoice = null, last = null;
+  const measures = [];
+  for (const meas of part.querySelectorAll(':scope > measure')) {
+    const div = meas.querySelector('attributes > divisions');
+    if (div) divisions = +div.textContent;
+    const evs = [];
+    for (const n of meas.querySelectorAll(':scope > note')) {
+      if (n.querySelector('grace')) continue;
+      const voice = n.querySelector('voice')?.textContent || '1';
+      if (firstVoice === null) firstVoice = voice;
+      if (voice !== firstVoice) continue;
+      const dur = +(n.querySelector('duration')?.textContent || 0) / divisions;
+      const p = n.querySelector('pitch');
+      const pitch = p && {
+        letter: p.querySelector('step').textContent,
+        alter: Math.round(+(p.querySelector('alter')?.textContent || 0)),
+        octave: +p.querySelector('octave').textContent,
+      };
+      if (pitch) pitch.midi = toMidi(pitch.letter, pitch.alter, pitch.octave);
+      if (n.querySelector('chord')) { // keep the top note of a chord as melody
+        if (pitch && last && pitch.midi > last.midi) Object.assign(last, pitch);
+        continue;
+      }
+      if (n.querySelector('rest') || !pitch) { last = { type: 'rest', beats: dur }; evs.push(last); last = null; continue; }
+      const tieStop = [...n.querySelectorAll('tie')].some(t => t.getAttribute('type') === 'stop');
+      if (tieStop && last && last.midi === pitch.midi) { last.beats += dur; continue; }
+      last = { type: 'note', ...pitch, beats: dur };
+      evs.push(last);
+    }
+    measures.push(evs);
+  }
+
+  // serialize to the text format (4 measures per text line)
+  let out = '', cur = null;
+  measures.forEach((evs, i) => {
+    const toks = evs.map(e => {
+      let d = durToken(e.beats);
+      if (d === cur) d = ''; else cur = d;
+      return (e.type === 'rest' ? 'r' : noteName(e.letter, e.alter, e.octave)) + d;
+    });
+    if (toks.length) out += toks.join(' ') + ' | ';
+    if ((i + 1) % 4 === 0) out = out.trimEnd() + '\n';
+  });
+  return { title, composer, text: out.trim() };
+}
+
+function durToken(b) {
+  const table = [[1, 4], [2, 2], [4, 1], [8, .5], [16, .25], [32, .125]];
+  for (const [den, v] of table) {
+    if (Math.abs(b - v) < 1e-6) return ':' + den;
+    if (Math.abs(b - v * 1.5) < 1e-6) return ':' + den + '.';
+  }
+  let best = table[0];
+  for (const t of table) if (Math.abs(b - t[1]) < Math.abs(b - best[1])) best = t;
+  return ':' + best[0];
+}
+
+/* ---------- MIDI import → text ---------- */
+function parseMidi(buf) {
+  const dv = new DataView(buf);
+  let p = 0;
+  const str = n => { let s = ''; for (let i = 0; i < n; i++) s += String.fromCharCode(dv.getUint8(p + i)); p += n; return s; };
+  const u32 = () => { const v = dv.getUint32(p); p += 4; return v; };
+  const u16 = () => { const v = dv.getUint16(p); p += 2; return v; };
+  const vlq = () => { let v = 0, b; do { b = dv.getUint8(p++); v = (v << 7) | (b & 0x7f); } while (b & 0x80); return v; };
+
+  if (str(4) !== 'MThd') throw new Error('El archivo no es un MIDI válido');
+  const hlen = u32(); u16();
+  const ntrk = u16(), ppq = u16();
+  p += hlen - 6;
+  if (ppq & 0x8000) throw new Error('MIDI con tiempo SMPTE no soportado');
+
+  let timeSig = null, keySf = 0, tempo = null;
+  const sources = [], tempos = [], drums = [];
+  for (let t = 0; t < ntrk && p + 8 <= dv.byteLength; t++) {
+    const id = str(4), len = u32(), end = Math.min(p + len, dv.byteLength);
+    if (id !== 'MTrk') { p = end; continue; }
+    let tick = 0, status = 0, name = '';
+    const open = {}, byChannel = {};
+    while (p < end) {
+      tick += vlq();
+      const b = dv.getUint8(p);
+      if (b === 0xff) { // meta event
+        const type = dv.getUint8(p + 1); p += 2;
+        const l = vlq(), d = p; p += l;
+        if (type === 0x03 && !name) { for (let i = 0; i < l; i++) name += String.fromCharCode(dv.getUint8(d + i)); }
+        if (type === 0x58 && !timeSig) timeSig = [dv.getUint8(d), 2 ** dv.getUint8(d + 1)];
+        if (type === 0x59 && !keySf) keySf = dv.getInt8(d);
+        if (type === 0x51) {
+          const us = (dv.getUint8(d) << 16) | (dv.getUint8(d + 1) << 8) | dv.getUint8(d + 2);
+          tempos.push({ tick, us });
+          if (!tempo) tempo = 60e6 / us;
+        }
+        continue;
+      }
+      if (b === 0xf0 || b === 0xf7) { p++; p += vlq(); continue; } // sysex
+      if (b & 0x80) { status = b; p++; } // otherwise running status
+      const type = status >> 4, ch = status & 15;
+      const d1 = dv.getUint8(p++);
+      const d2 = type === 0xc || type === 0xd ? 0 : dv.getUint8(p++);
+      if (ch === 9) { // drums: only used for full playback
+        if (type === 0x9 && d2 > 0) drums.push({ start: tick, midi: d1, vel: d2 });
+        continue;
+      }
+      if (type === 0x9 && d2 > 0) {
+        (open[ch * 128 + d1] ||= []).push({ tick, vel: d2 });
+      } else if (type === 0x8 || type === 0x9) {
+        const on = open[ch * 128 + d1]?.shift();
+        if (on) (byChannel[ch] ||= []).push({ start: on.tick, end: tick, midi: d1, vel: on.vel });
+      }
+    }
+    p = end;
+    const chans = Object.keys(byChannel);
+    for (const ch of chans) {
+      const notes = byChannel[ch].sort((a, b) => a.start - b.start);
+      const lo = Math.min(...notes.map(n => n.midi)), hi = Math.max(...notes.map(n => n.midi));
+      const nm = name.trim() || `Pista ${t + 1}`;
+      sources.push({
+        name: nm, notes,
+        label: `${nm}${chans.length > 1 ? ` · canal ${+ch + 1}` : ''} · ${notes.length} notas · ${noteName(...Object.values(spell(lo)))}–${noteName(...Object.values(spell(hi)))}`,
+      });
+    }
+  }
+  return { ppq, timeSig: timeSig || [4, 4], keySf, tempo, tempos, drums, sources };
+}
+
+function pickMelody(sources) {
+  const named = sources.findIndex(s => /melod|lead|vocal|voice|flute|ocarina|solo|main/i.test(s.name));
+  if (named >= 0) return named;
+  let best = 0, bestScore = -Infinity;
+  sources.forEach((s, i) => {
+    const avg = s.notes.reduce((a, n) => a + n.midi, 0) / s.notes.length;
+    const score = avg + Math.min(s.notes.length, 200) / 10; // high & busy tracks tend to be the melody
+    if (score > bestScore) { best = i; bestScore = score; }
+  });
+  return best;
+}
+
+function midiToText(midi, src) {
+  const { ppq } = midi, grid = ppq / 4; // quantize to 16th notes
+  const q = x => Math.round(x / grid) * grid;
+  const byStart = new Map();
+  for (const n of src.notes) { // keep the highest note at each onset
+    const s = q(n.start), cur = byStart.get(s);
+    if (!cur || n.midi > cur.midi) byStart.set(s, { start: s, end: Math.max(s + grid, q(n.end)), midi: n.midi });
+  }
+  const mel = [...byStart.values()].sort((a, b) => a.start - b.start);
+  if (!mel.length) return '';
+
+  const measTicks = ppq * 4 * midi.timeSig[0] / midi.timeSig[1];
+  const toks = [];
+  let cur = null, measure = Math.floor(mel[0].start / measTicks), pos = measure * measTicks, count = 0;
+  const emit = (name, ticks) => { let d = durToken(ticks / ppq); if (d === cur) d = ''; else cur = d; toks.push(name + d); };
+  const barCheck = () => { while (pos >= (measure + 1) * measTicks) { measure++; toks.push(++count % 4 === 0 ? '|\n' : '|'); } };
+
+  mel.forEach((n, i) => {
+    while (pos < n.start) { // rests, split at barlines
+      const e = Math.min(n.start, (measure + 1) * measTicks);
+      if (e - pos >= grid) emit('r', e - pos);
+      pos = e; barCheck();
+    }
+    const end = Math.min(n.end, mel[i + 1]?.start ?? Infinity);
+    const sp = spell(n.midi, midi.keySf < 0);
+    emit(noteName(sp.letter, sp.alter, sp.octave), end - n.start);
+    pos = end; barCheck();
+  });
+  return toks.join(' ').replace(/ ?\n ?/g, '\n').trim();
+}
+
+/* ---------- Transposition ---------- */
+function computeShift(notes, setting) {
+  if (setting !== 'auto') return +setting;
+  if (!notes.length) return 0;
+  // fewest notes out of range, then octave shifts over semitone shifts, then the smallest shift
+  let best = 0, bestKey = null;
+  for (let s = -48; s <= 48; s++) {
+    const key = [notes.filter(n => n.midi + s < MIN_MIDI || n.midi + s > MAX_MIDI).length, s % 12 !== 0 ? 1 : 0, Math.abs(s)];
+    if (!bestKey || key[0] - bestKey[0] < 0 || (key[0] === bestKey[0] && (key[1] < bestKey[1] || (key[1] === bestKey[1] && key[2] < bestKey[2])))) {
+      best = s; bestKey = key;
+    }
+  }
+  return best;
+}
+
+/* ---------- Layout & drawing ---------- */
+const W = 760, M = 22, S = 13, R = 12.5;  // S = half staff space
+const CONTENT_L = M + 92, CONTENT_R = W - M - 20;
+// treble clef outline from Noto Music (font units, em = 1000, y up) — see tools/extract_clef.py
+const CLEF_PATH = 'M314 801Q300 854 291.0 906.0Q282 958 282 1012Q282 1059 288.5 1100.5Q295 1142 307 1177Q320 1217 341.0 1252.5Q362 1288 385.5 1311.0Q409 1334 427 1334Q451 1334 493 1249Q514 1206 524.0 1156.0Q534 1106 534 1049Q534 978 515.0 907.5Q496 837 459.5 775.0Q423 713 372 666L407 498Q422 500 432.0 501.0Q442 502 447 502Q508 502 556.0 467.5Q604 433 632.5 377.0Q661 321 661 254Q661 177 621.5 115.5Q582 54 503 25Q508 8 532 -117Q538 -147 541.0 -164.5Q544 -182 545.0 -195.0Q546 -208 546 -225Q546 -275 521.5 -314.5Q497 -354 455.5 -376.0Q414 -398 363 -398Q311 -398 271.0 -378.5Q231 -359 208.0 -324.5Q185 -290 185 -245Q185 -197 211.5 -165.0Q238 -133 287 -133Q329 -133 355.5 -163.5Q382 -194 382 -236Q382 -272 357.0 -299.0Q332 -326 292 -326H282Q308 -365 364 -365Q433 -365 472.0 -320.0Q511 -275 511 -205Q511 -188 507.0 -159.5Q503 -131 493 -91Q483 -51 477.5 -25.0Q472 1 470 12Q436 2 390 2Q304 2 222 52Q142 102 96.0 184.0Q50 266 50 361Q50 451 91 530Q132 609 192.5 675.0Q253 741 314 801ZM341 826Q364 838 390.0 870.5Q416 903 440.0 945.0Q464 987 479.0 1029.5Q494 1072 494 1106Q494 1142 483.0 1163.0Q472 1184 445 1184Q421 1184 398.5 1162.0Q376 1140 358.5 1103.5Q341 1067 331.0 1022.0Q321 977 321 930Q321 898 327.5 872.0Q334 846 341 826ZM398 379Q371 373 347.0 353.5Q323 334 308.5 306.5Q294 279 294 248Q294 223 307.0 196.5Q320 170 339 154Q352 142 365 136Q380 129 380 123Q380 120 370 117Q332 126 301.5 151.0Q271 176 253.5 211.5Q236 247 236 287Q236 330 253.5 370.0Q271 410 302.5 442.0Q334 474 374 490L345 641Q229 547 174.5 456.5Q120 366 120 277Q120 212 154.0 156.0Q188 100 247.0 65.5Q306 31 380 31Q400 31 420.5 35.0Q441 39 464 45ZM495 55Q593 97 593 227Q593 270 571.0 305.5Q549 341 512.0 362.0Q475 383 429 383Z';
+const CLEF_SCALE = 7.4 * S / 1000;
+
+let MIN_ADVANCE = 40, ADV_UNIT = 52, ADV_EXP = 0.6; // real-ocarina mode: wider notes, flatter spacing
+const advance = e => Math.max(MIN_ADVANCE, ADV_UNIT * Math.pow(e.beats || 1, ADV_EXP));
+
+function buildLines(events, opts) {
+  const avail = CONTENT_R - CONTENT_L;
+  const segs = [];
+  let cur = [];
+  for (const ev of events) {
+    if (ev.type === 'bar') { segs.push({ items: cur, bar: true }); cur = []; }
+    else if (ev.type === 'break') { segs.push({ items: cur, brk: true }); cur = []; }
+    else cur.push(ev);
+  }
+  if (cur.length) segs.push({ items: cur });
+
+  const lines = [];
+  let line = [], x = 0, measures = 0;
+  const flush = () => { if (line.some(i => !i.bar)) lines.push(line); line = []; x = 0; measures = 0; };
+  for (const seg of segs) {
+    const w = seg.items.reduce((s, e) => s + advance(e), 0);
+    if (line.length && x + w > avail) flush();
+    for (const e of seg.items) {
+      const a = advance(e);
+      if (line.length && x + a > avail) flush();
+      line.push({ ev: e, x });
+      x += a;
+    }
+    if (seg.bar && seg.items.length) {
+      line.push({ bar: true, x });
+      if (opts.bars) x += 10;
+      if (opts.mpl && ++measures >= opts.mpl) flush();
+    }
+    if (seg.brk) flush();
+  }
+  flush();
+  return lines;
+}
+
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ---------- Real 12-hole Alto C ocarina ---------- */
+// Closed holes for each written pitch (MIDI), from the Imperial City Ocarina 12-hole Alto C chart.
+// The instrument sounds one octave above the written note.
+// L1-L4 / R1-R4: index..pinky of each hand, LT/RT: thumb holes underneath, SA/SB: the two small subholes.
+const REAL_FINGERING = {
+  57: 'LT RT L1 L2 L3 L4 R1 R2 R3 R4 SA SB', // A3
+  58: 'LT RT L1 L2 L3 L4 R1 R2 R3 R4 SA',    // A#3
+  59: 'LT RT L1 L2 L3 L4 R1 R2 R3 R4 SB',    // B3
+  60: 'LT RT L1 L2 L3 L4 R1 R2 R3 R4',       // C4
+  61: 'LT RT L1 L2 L3 L4 R1 R2 R3 SB',       // C#4
+  62: 'LT RT L1 L2 L3 L4 R1 R2 R3',          // D4
+  63: 'LT RT L1 L2 L3 L4 R1 R2 R4',          // D#4
+  64: 'LT RT L1 L2 L3 L4 R1 R2',             // E4
+  65: 'LT RT L1 L2 L3 L4 R1',                // F4
+  66: 'LT RT L1 L2 L3 L4 R3',                // F#4
+  67: 'LT RT L1 L2 L3 L4',                   // G4
+  68: 'LT RT L1 L2 L4 R3',                   // G#4
+  69: 'LT RT L1 L2 L4',                      // A4
+  70: 'LT RT L1 L4 R3',                      // A#4
+  71: 'LT RT L1 L4',                         // B4
+  72: 'LT RT L4',                            // C5
+  73: 'RT L4 R3',                            // C#5
+  74: 'RT L4',                               // D5
+  75: 'L4 R3',                               // D#5
+  76: 'L4',                                  // E5
+  77: '',                                    // F5
+};
+
+// Diagram in its own units (≈ the chart's layout): wide end = left hand, tip = right hand.
+const OC_BODY = 'M236,150 C228,112 290,72 370,55 C420,44 462,34 484,36 C474,62 446,110 424,150 C404,184 340,192 290,184 C256,178 240,168 236,150Z';
+const OC_HOLES = {
+  LT: [262, 202, 13], RT: [440, 176, 13], // thumb holes are underneath: drawn as dots below the body
+  L1: [277, 143, 13], L2: [303, 126, 13], L3: [330, 110, 13], L4: [343, 83, 10],
+  R1: [387, 143, 13], R2: [404, 118, 12], R3: [420, 93, 11], R4: [438, 68, 9],
+  SA: [318, 148, 7], SB: [385, 100, 7],
+};
+const OC_SCALE = 0.25, OC_W = 270 * OC_SCALE, DIAG_H = 190 * OC_SCALE;
+
+function ocarinaDiagram(x, y, scale, closed, labels) {
+  let s = `<g transform="translate(${x} ${y}) scale(${scale}) translate(-225 -28)">` +
+          `<path class="ocb" d="${OC_BODY}" fill="#fff" stroke="#1b1b1b" stroke-width="5" stroke-linejoin="round"/>`;
+  for (const [hole, [hx, hy, r]] of Object.entries(OC_HOLES)) {
+    s += `<circle cx="${hx}" cy="${hy}" r="${r}" fill="${closed.has(hole) ? '#1b1b1b' : '#fff'}" stroke="#1b1b1b" stroke-width="3.5"/>`;
+    if (labels) s += `<text x="${hx}" y="${hy + (r < 10 ? 5 : 7)}" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="${r < 10 ? 12 : 19}" fill="#7a1e10">${labels[hole]}</text>`;
+  }
+  return s + '</g>';
+}
+
+function drawRealNote(n, cx, cy, staffTop, diagY, id) {
+  let s = `<g class="note real" id="${id}">`;
+  for (const d of [28, 26]) { // ledger lines for C4 and A3
+    if (n.d > d) continue;
+    const ly = staffTop + (38 - d) * S;
+    s += `<line x1="${cx - 11}" x2="${cx + 11}" y1="${ly}" y2="${ly}" stroke="#9b6a5c" stroke-width="1.4"/>`;
+  }
+  const hollow = n.beats >= 2;
+  s += `<ellipse class="nh" cx="${cx}" cy="${cy}" rx="6.8" ry="5" transform="rotate(-20 ${cx} ${cy})" fill="${hollow ? 'none' : '#1b1b1b'}" stroke="#1b1b1b" stroke-width="${hollow ? 2 : 1}"/>`;
+  if (n.alterShown) s += `<text x="${cx - 9}" y="${cy + 5}" text-anchor="end" font-size="15" font-family="'Segoe UI Symbol', 'DejaVu Sans', serif" fill="#1b1b1b">${n.alterShown > 0 ? '♯' : '♭'}</text>`;
+  s += ocarinaDiagram(cx - OC_W / 2, diagY, OC_SCALE, new Set(n.combo.holes.split(' ')));
+  return s + '</g>';
+}
+
+function realLegend(y) {
+  const labels = { LT: 'P', RT: 'P', L1: '1', L2: '2', L3: '3', L4: '4', R1: '1', R2: '2', R3: '3', R4: '4', SA: 's', SB: 's' };
+  const lx = M + 36, scale = 0.52, tx = lx + 270 * scale + 18;
+  const line = (i, t) => `<text x="${tx}" y="${y + 16 + i * 17}" font-family="Arial, sans-serif" font-size="12.5" fill="#3b2a20">${t}</text>`;
+  return ocarinaDiagram(lx, y, scale, new Set(), labels) +
+    line(0, '<tspan font-weight="700">Ocarina de 12 agujeros (Alto C)</tspan> · ● tapado  ○ destapado') +
+    line(1, 'Mano izquierda (lado ancho): 1 índice · 2 medio · 3 anular · 4 meñique') +
+    line(2, 'Mano derecha (punta): 1 índice · 2 medio · 3 anular · 4 meñique') +
+    line(3, 'P = agujeros de los pulgares (por debajo) · s = subagujeros pequeños') +
+    line(4, 'Suena una octava más aguda de lo escrito.');
+}
+
+// Ocarina of Time 3D: same notes, different buttons
+const DS_LABEL = { A: 'L', Cu: 'A', Cd: 'R', Cl: 'X', Cr: 'Y' };
+
+function draw3dsButton(button, cx, cy) {
+  const label = DS_LABEL[button];
+  const shape = label === 'L' || label === 'R'
+    ? `<rect x="${cx - R - 3}" y="${cy - R + 2}" width="${2 * R + 6}" height="${2 * R - 4}" rx="7"`
+    : `<circle cx="${cx}" cy="${cy}" r="${R}"`;
+  return `${shape} fill="url(#gS)" stroke="#3f3a2e" stroke-width="1.6"/>` +
+         `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-family="'Arial Black', Arial, sans-serif" font-weight="900" font-size="14" fill="#2b2720">${label}</text>`;
+}
+
+// small D-pad with the up (sharp) or down (flat) arm highlighted
+function dpadBadge(cx, cy, up) {
+  const x = up ? cx + R + 7 : cx - R - 9, y = up ? cy - R - 3 : cy + 9, a = 3, L = 8.5;
+  return `<path d="M${x - a},${y - L} h${2 * a} v${L - a} h${L - a} v${2 * a} h${a - L} v${L - a} h${-2 * a} v${a - L} h${a - L} v${-2 * a} h${L - a}Z" fill="#3d3d3d"/>` +
+         `<rect x="${x - a}" y="${up ? y - L : y + a}" width="${2 * a}" height="${L - a}" fill="#e8552b"/>`;
+}
+
+function drawButton(n, cx, cy, id, opts) {
+  let s = `<g class="note" id="${id}">`;
+  const c = n.combo;
+  if (opts.ledger) {
+    const d = n.d;
+    if (d <= 28) s += `<line x1="${cx - R - 6}" x2="${cx + R + 6}" y1="${cy + (d - 28) * S}" y2="${cy + (d - 28) * S}" stroke="#9b6a5c" stroke-width="1.4"/>`;
+    if (d <= 26) s += `<line x1="${cx - R - 6}" x2="${cx + R + 6}" y1="${cy + (d - 26) * S}" y2="${cy + (d - 26) * S}" stroke="#9b6a5c" stroke-width="1.4"/>`;
+  }
+  if (!c) {
+    s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#fde2e0" stroke="#c0271b" stroke-width="2" stroke-dasharray="4 3"/>` +
+         `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-family="Arial" font-weight="700" font-size="15" fill="#c0271b">?</text></g>`;
+    return s;
+  }
+  const ds = $('game').value === '3ds';
+  if (ds) {
+    s += draw3dsButton(c.button, cx, cy);
+  } else if (c.button === 'A') {
+    s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#gA)" stroke="#12225e" stroke-width="1.6"/>` +
+         `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-family="'Arial Black', Arial, sans-serif" font-weight="900" font-size="14" fill="#fff">A</text>`;
+  } else {
+    const t = { Cu: `M${cx},${cy - 7} L${cx + 7},${cy + 5} L${cx - 7},${cy + 5}Z`,
+                Cd: `M${cx},${cy + 7} L${cx + 7},${cy - 5} L${cx - 7},${cy - 5}Z`,
+                Cl: `M${cx - 7},${cy} L${cx + 5},${cy - 7} L${cx + 5},${cy + 7}Z`,
+                Cr: `M${cx + 7},${cy} L${cx - 5},${cy - 7} L${cx - 5},${cy + 7}Z` }[c.button];
+    s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#gC)" stroke="#7a5700" stroke-width="1.6"/>` +
+         `<path d="${t}" fill="#ffe96a" stroke="#4a3500" stroke-width="1.7" stroke-linejoin="round"/>`;
+  }
+  if (c.stick > 0) {
+    s += `<line x1="${cx}" x2="${cx}" y1="${cy - R - 1}" y2="${cy - R - 11}" stroke="#111" stroke-width="2.2"/>` +
+         `<path d="M${cx},${cy - R - 19} L${cx - 5.5},${cy - R - 10} L${cx + 5.5},${cy - R - 10}Z" fill="#111"/>`;
+  } else if (c.stick < 0) {
+    s += `<line x1="${cx}" x2="${cx}" y1="${cy + R + 1}" y2="${cy + R + 11}" stroke="#111" stroke-width="2.2"/>` +
+         `<path d="M${cx},${cy + R + 19} L${cx - 5.5},${cy + R + 10} L${cx + 5.5},${cy + R + 10}Z" fill="#111"/>`;
+  }
+  if (ds && c.mod) {
+    s += dpadBadge(cx, cy, c.mod > 0);
+  } else if (c.mod > 0) {
+    s += `<rect x="${cx + R - 3}" y="${cy - R - 9}" width="13" height="16" rx="1.5" fill="#4a4a4a"/>` +
+         `<text x="${cx + R + 3.5}" y="${cy - R + 3}" text-anchor="middle" font-family="Arial" font-weight="700" font-size="12" fill="#fff">R</text>`;
+  } else if (c.mod < 0) {
+    s += `<rect x="${cx - R - 13}" y="${cy + 1}" width="13" height="16" rx="1.5" fill="#4a4a4a"/>` +
+         `<text x="${cx - R - 6.5}" y="${cy + 13}" text-anchor="middle" font-family="Arial" font-weight="700" font-size="12" fill="#fff">Z</text>`;
+  }
+  return s + '</g>';
+}
+
+let playList = [];
+
+function render() {
+  const opts = { names: $('names').checked, bars: $('bars').checked, ledger: $('ledger').checked, mpl: +$('mpl').value };
+  const real = $('game').value === 'real';
+  [MIN_MIDI, MAX_MIDI] = real ? [57, 77] : [59, 77];
+  [MIN_ADVANCE, ADV_UNIT, ADV_EXP] = real ? [70, 70, 0.3] : [40, 52, 0.6];
+  const rangeName = real ? 'A3–F5' : 'B3–F5';
+  const { events, errors } = parseText($('src').value);
+  const notes = events.filter(e => e.type === 'note');
+  const shift = computeShift(notes, $('transpose').value);
+  const msgs = errors.map(e => ({ warn: true, text: e }));
+
+  let outOfRange = [], folded = 0;
+  for (const n of notes) {
+    let pm = n.midi + shift, fold = 0;
+    if ($('fold').checked) {
+      while (pm + fold < MIN_MIDI) fold += 12;
+      while (pm + fold > MAX_MIDI) fold -= 12;
+      if (fold) folded++;
+    }
+    pm += fold;
+    const sp = (shift + fold) % 12 === 0 ? { letter: n.letter, alter: n.alter, octave: n.octave + (shift + fold) / 12 } : spell(pm, n.alter < 0);
+    n.pm = pm;
+    n.name = noteName(sp.letter, sp.alter, sp.octave);
+    n.d = Math.max(22, Math.min(42, STEP_IDX[sp.letter] + sp.octave * 7));
+    const playable = pm >= MIN_MIDI && pm <= MAX_MIDI;
+    n.combo = !playable ? null : real ? { holes: REAL_FINGERING[pm] } : comboFor(pm, Math.sign(sp.alter));
+    n.alterShown = sp.alter;
+    if (!n.combo) outOfRange.push(n.name);
+  }
+
+  if (notes.length) msgs.push({ text: `${notes.length} notas.` + (shift ? ` Transpuesta ${shift > 0 ? '+' : ''}${shift} semitonos para caber en el rango de la ocarina (${rangeName}).` : '') });
+  if (outOfRange.length) msgs.push({ warn: true, text: `${outOfRange.length} nota(s) fuera del rango de la ocarina (marcadas con ?): ${[...new Set(outOfRange)].join(', ')}. La melodía abarca más de lo que la ocarina puede tocar; prueba otra transposición o ajusta esas notas.` });
+
+  if (folded) msgs.push({ text: `${folded} nota(s) movidas de octava para caber en el rango (desmarca la opción para verlas como ?).` });
+
+  const title = $('title').value.trim(), subtitle = $('subtitle').value.trim();
+  const legendH = real ? 104 : 0;
+  const headerH = (title || subtitle ? M + 96 : M + 20) + legendH;
+  let body = '', y = headerH, idx = 0;
+  playList = [];
+
+  for (const line of buildLines(events, opts)) {
+    let top = -S, bot = 9 * S;
+    for (const it of line) {
+      const n = it.ev;
+      if (!n || n.type !== 'note') continue;
+      const yy = (38 - n.d) * S, c = n.combo || {};
+      if (real && n.combo) { top = Math.min(top, yy - 12); bot = Math.max(bot, yy + 10); continue; }
+      top = Math.min(top, yy - R - (c.stick > 0 ? 20 : 0) - (c.mod > 0 ? 10 : 2));
+      bot = Math.max(bot, yy + R + (c.stick < 0 ? 20 : 0) + (c.mod < 0 ? 6 : 4));
+    }
+    const diagTop = bot + 6; // fingering diagrams go under the staff
+    if (real) bot += DIAG_H + 12;
+    if (opts.names) bot += 20;
+    const staffTop = y - top + 4;
+
+    for (let k = 0; k < 5; k++) {
+      const ly = staffTop + k * 2 * S;
+      body += `<line x1="${M + 16}" x2="${W - M - 16}" y1="${ly}" y2="${ly}" stroke="#9b6a5c" stroke-width="1.4"/>`;
+    }
+    body += `<use href="#clef" transform="translate(${M + 22} ${staffTop + 6.9 * S}) scale(${CLEF_SCALE} ${-CLEF_SCALE})"/>`;
+
+    line.forEach((it, i) => {
+      if (it.bar) {
+        if (opts.bars && i < line.length - 1) {
+          const bx = CONTENT_L + it.x + 2;
+          body += `<line x1="${bx}" x2="${bx}" y1="${staffTop}" y2="${staffTop + 8 * S}" stroke="#9b6a5c" stroke-width="1.4"/>`;
+        }
+        return;
+      }
+      const n = it.ev;
+      if (n.type === 'rest') { playList.push({ beats: n.beats }); return; }
+      const cx = CONTENT_L + it.x + 20, cy = staffTop + (38 - n.d) * S, id = 'n' + idx++;
+      body += real && n.combo ? drawRealNote(n, cx, cy, staffTop, staffTop + diagTop, id) : drawButton(n, cx, cy, id, opts);
+      if (opts.names) body += `<text x="${cx}" y="${staffTop + bot - 4}" text-anchor="middle" font-family="Arial" font-size="11" fill="#6b4a3a">${n.name}</text>`;
+      playList.push({ midi: n.combo ? n.pm + (real ? 12 : 0) : null, beats: n.beats, id }); // real alto C sounds an octave up
+    });
+    y = staffTop + bot + 14;
+  }
+
+  const H = Math.max(y + M, headerH + 120);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <defs>
+      <path id="clef" d="${CLEF_PATH}" fill="#2b1a12"/>
+      <radialGradient id="gA" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#7d97ff"/><stop offset="1" stop-color="#1c3cc4"/></radialGradient>
+      <radialGradient id="gC" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#fff58a"/><stop offset="1" stop-color="#e6b000"/></radialGradient>
+      <radialGradient id="gS" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#f6f2e4"/><stop offset="1" stop-color="#aea78f"/></radialGradient>
+    </defs>
+    <rect x="0" y="0" width="${W}" height="${H}" fill="#f4e9a6"/>
+    <rect x="${M / 2}" y="${M / 2}" width="${W - M}" height="${H - M}" fill="none" stroke="#8e2b1b" stroke-width="4"/>
+    ${title ? `<text x="${W / 2}" y="${M + 48}" text-anchor="middle" font-family="Almendra, Georgia, serif" font-weight="700" font-size="38" fill="#7a1e10">${esc(title)}</text>` : ''}
+    ${subtitle ? `<text x="${W / 2}" y="${M + 70}" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="13" fill="#e07a1c" letter-spacing=".5">${esc(subtitle.toUpperCase())}</text>` : ''}
+    ${real ? realLegend(headerH - legendH + 4) : ''}
+    ${body}
+  </svg>`;
+  $('sheet').innerHTML = svg;
+  $('msg').innerHTML = msgs.map(m => `<div class="${m.warn ? 'warn' : ''}">${esc(m.text)}</div>`).join('');
+}
+
+/* ---------- Playback ---------- */
+let actx = null, voices = [], timers = [], midiTimer = null, midiOut = null;
+function stop() {
+  timers.forEach(clearTimeout); timers = [];
+  clearInterval(midiTimer); midiTimer = null;
+  if (midiOut) { midiOut.disconnect(); midiOut = null; }
+  voices.forEach(o => { try { o.stop(); } catch (e) {} }); voices = [];
+  document.querySelectorAll('.note.playing').forEach(e => e.classList.remove('playing'));
+}
+function play() {
+  stop();
+  actx = actx || new AudioContext();
+  actx.resume(); // mobile browsers start the context suspended
+  const spb = 60 / (+$('tempo').value || 110);
+  const t0 = actx.currentTime + 0.1;
+  let t = t0;
+  for (const p of playList) {
+    const dur = p.beats * spb;
+    if (p.id) {
+      timers.push(setTimeout(() => {
+        document.querySelectorAll('.note.playing').forEach(e => e.classList.remove('playing'));
+        document.getElementById(p.id)?.classList.add('playing');
+      }, (t - t0 + 0.1) * 1000));
+    }
+    if (p.midi != null) {
+      const f = 440 * Math.pow(2, (p.midi - 69) / 12);
+      const g = actx.createGain(); g.connect(actx.destination);
+      const o = actx.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.connect(g);
+      const g2 = actx.createGain(); g2.gain.value = 0.12; g2.connect(g);
+      const o2 = actx.createOscillator(); o2.type = 'triangle'; o2.frequency.value = f * 2; o2.connect(g2);
+      const lfo = actx.createOscillator(); lfo.frequency.value = 5.5;
+      const lg = actx.createGain(); lg.gain.value = f * 0.005; lfo.connect(lg); lg.connect(o.frequency);
+      const end = t + Math.max(0.08, dur * 0.92);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.28, t + 0.04);
+      g.gain.setValueAtTime(0.28, end - 0.05);
+      g.gain.linearRampToValueAtTime(0, end);
+      for (const osc of [o, o2, lfo]) { osc.start(t); osc.stop(end + 0.02); voices.push(osc); }
+    }
+    t += dur;
+  }
+  timers.push(setTimeout(() => document.querySelectorAll('.note.playing').forEach(e => e.classList.remove('playing')), (t - t0 + 0.2) * 1000));
+}
+
+/* ---------- Full MIDI playback (all tracks) ---------- */
+function makeTickToSec(midi) {
+  const map = [{ tick: 0, sec: 0, us: 500000 }];
+  for (const t of [...midi.tempos].sort((a, b) => a.tick - b.tick)) {
+    const last = map[map.length - 1];
+    if (t.tick === last.tick) { last.us = t.us; continue; }
+    map.push({ tick: t.tick, sec: last.sec + (t.tick - last.tick) / midi.ppq * last.us / 1e6, us: t.us });
+  }
+  return tick => {
+    let m = map[0];
+    for (const e of map) { if (e.tick <= tick) m = e; else break; }
+    return m.sec + (tick - m.tick) / midi.ppq * m.us / 1e6;
+  };
+}
+
+const WAVES = [['triangle', 0.16], ['square', 0.05], ['sawtooth', 0.05], ['sine', 0.2]];
+let noiseBuf = null;
+
+function synthNote(out, t, d, midi, vel, [wave, level]) {
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = wave;
+  o.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+  const peak = level * vel / 127;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(peak, t + 0.01);
+  g.gain.setTargetAtTime(peak * 0.6, t + 0.01, 0.3);
+  g.gain.setTargetAtTime(0, t + d, 0.05);
+  o.connect(g); g.connect(out);
+  o.start(t); o.stop(t + d + 0.4);
+}
+
+function drumHit(out, t, midi, vel) {
+  if (!noiseBuf) {
+    noiseBuf = actx.createBuffer(1, actx.sampleRate * 0.4, actx.sampleRate);
+    const ch = noiseBuf.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  }
+  const src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+  src.buffer = noiseBuf;
+  const kick = midi === 35 || midi === 36, hat = [42, 44, 46, 49, 51, 57].includes(midi);
+  f.type = kick ? 'lowpass' : hat ? 'highpass' : 'bandpass';
+  f.frequency.value = kick ? 160 : hat ? 7000 : 1800;
+  const len = kick ? 0.25 : hat ? 0.06 : 0.15;
+  g.gain.setValueAtTime((kick ? 0.9 : 0.25) * vel / 127, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + len);
+  src.connect(f); f.connect(g); g.connect(out);
+  src.start(t); src.stop(t + len + 0.05);
+}
+
+const fmtTime = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+function playMidiAll() {
+  if (!midiData) return;
+  stop();
+  actx = actx || new AudioContext();
+  actx.resume(); // mobile browsers start the context suspended
+  const sec = makeTickToSec(midiData), events = [];
+  midiData.sources.forEach((s, si) => {
+    for (const n of s.notes) {
+      const t = sec(n.start);
+      events.push({ t, d: Math.max(0.05, sec(n.end) - t), midi: n.midi, vel: n.vel, voice: WAVES[si % WAVES.length] });
+    }
+  });
+  for (const h of midiData.drums) events.push({ t: sec(h.start), drum: true, midi: h.midi, vel: h.vel });
+  events.sort((a, b) => a.t - b.t);
+  const total = events.reduce((m, e) => Math.max(m, e.t + (e.d || 0.2)), 0);
+
+  const out = midiOut = actx.createGain();
+  out.gain.value = 0.6;
+  out.connect(actx.destination);
+  const t0 = actx.currentTime + 0.15;
+  let i = 0;
+  const pump = () => { // schedule ~1s ahead so long songs don't create thousands of nodes at once
+    const now = actx.currentTime - t0;
+    while (i < events.length && events[i].t < now + 1) {
+      const e = events[i++];
+      if (e.drum) drumHit(out, t0 + e.t, e.midi, e.vel);
+      else synthNote(out, t0 + e.t, e.d, e.midi, e.vel, e.voice);
+    }
+    $('midiTime').textContent = `${fmtTime(Math.max(0, now))} / ${fmtTime(total)}`;
+    if (now > total + 0.5) stop();
+  };
+  pump();
+  midiTimer = setInterval(pump, 100);
+}
+
+/* ---------- Export ---------- */
+function download(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+const fileBase = () => ($('title').value.trim() || 'ocarina').replace(/[^\w\-]+/g, '_') + '_' + $('game').value;
+// exported SVG/PNG can't reach our font files, so the title font is embedded as a data URL
+let fontCss = null;
+async function embeddedFontCss() {
+  if (!fontCss) {
+    const bytes = new Uint8Array(await fetch('fonts/almendra-700.woff2').then(r => r.arrayBuffer()));
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    fontCss = `@font-face{font-family:Almendra;font-weight:700;src:url(data:font/woff2;base64,${btoa(bin)}) format("woff2")}`;
+  }
+  return fontCss;
+}
+async function svgString() {
+  stop();
+  const svg = $('sheet').querySelector('svg').cloneNode(true);
+  try {
+    const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    style.textContent = await embeddedFontCss();
+    svg.insertBefore(style, svg.firstChild);
+  } catch (e) { /* export still works with a fallback font */ }
+  return new XMLSerializer().serializeToString(svg);
+}
+
+$('svgBtn').onclick = async () => download(new Blob([await svgString()], { type: 'image/svg+xml' }), fileBase() + '.svg');
+$('png').onclick = async () => {
+  const svg = $('sheet').querySelector('svg'), scale = 2;
+  const img = new Image();
+  img.onload = () => setTimeout(() => { // give the embedded font a moment to decode
+    const cv = document.createElement('canvas');
+    cv.width = svg.width.baseVal.value * scale; cv.height = svg.height.baseVal.value * scale;
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    cv.toBlob(b => download(b, fileBase() + '.png'));
+  }, 150);
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(await svgString());
+};
+$('print').onclick = () => window.print();
+$('play').onclick = play;
+$('stop').onclick = stop;
+
+// JSZip (~95 KB) is only needed for compressed .mxl files, so it loads on demand
+let jszipPromise = null;
+const loadJSZip = () => jszipPromise ||= new Promise((resolve, reject) => {
+  const s = document.createElement('script');
+  s.src = 'vendor/jszip-3.10.1.min.js';
+  s.onload = () => resolve(window.JSZip);
+  s.onerror = () => { jszipPromise = null; reject(new Error('No se pudo cargar el lector de archivos .mxl')); };
+  document.head.appendChild(s);
+});
+
+let midiData = null;
+function loadMidiTrack() {
+  $('src').value = midiToText(midiData, midiData.sources[+$('track').value]);
+  $('transpose').value = 'auto';
+  render();
+}
+$('track').onchange = loadMidiTrack;
+$('playMidi').onclick = playMidiAll;
+
+$('file').onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    if (/\.midi?$/i.test(f.name)) {
+      midiData = parseMidi(await f.arrayBuffer());
+      if (!midiData.sources.length) throw new Error('El MIDI no tiene notas');
+      $('track').innerHTML = midiData.sources.map((s, i) => `<option value="${i}">${esc(s.label)}</option>`).join('');
+      $('track').value = pickMelody(midiData.sources);
+      $('trackBox').hidden = false;
+      $('title').value = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+      $('subtitle').value = '';
+      if (midiData.tempo) $('tempo').value = Math.round(midiData.tempo);
+      loadMidiTrack();
+      e.target.value = '';
+      return;
+    }
+    $('trackBox').hidden = true;
+    let text;
+    if (/\.mxl$/i.test(f.name)) {
+      const zip = await (await loadJSZip()).loadAsync(f);
+      let path;
+      const container = zip.file('META-INF/container.xml');
+      if (container) {
+        const c = new DOMParser().parseFromString(await container.async('string'), 'application/xml');
+        path = c.querySelector('rootfile')?.getAttribute('full-path');
+      }
+      path = path || Object.keys(zip.files).find(p => !p.startsWith('META-INF') && /\.(xml|musicxml)$/i.test(p));
+      text = await zip.file(path).async('string');
+    } else {
+      text = await f.text();
+    }
+    const r = parseMusicXML(text);
+    $('src').value = r.text;
+    if (r.title) $('title').value = r.title;
+    $('subtitle').value = r.composer ? 'Music by ' + r.composer : '';
+    $('transpose').value = 'auto';
+    render();
+  } catch (err) {
+    $('msg').innerHTML = `<div class="warn">${esc(err.message)}</div>`;
+  }
+  e.target.value = '';
+};
+
+/* ---------- Init ---------- */
+const tsel = $('transpose');
+tsel.innerHTML = '<option value="auto">Automática</option>' +
+  Array.from({ length: 49 }, (_, i) => i - 24).map(v => `<option value="${v}">${v > 0 ? '+' : ''}${v} st${v % 12 === 0 && v ? ` (${v / 12 > 0 ? '+' : ''}${v / 12} oct)` : ''}</option>`).join('');
+
+$('src').value = `% Kakariko Village — 3/4, tempo 103
+D4:4 | G4:2 D4:4 | B4:2 G4:4 | D5:2.~ | D5:2
+D4:4 | G4:2 D4:4 | B4:2 G4:4 | D5:2.~ | D5:2
+D5:4 | E5:2. | F#4:2 E5:4 | D5:2. | B4:2.
+| B4:2. | B4:2 A4:4 | G4:2.~ | G4:2
+G4:4 | G4:2. | F#4:2 A4:4 | G4:2. | D4:2.
+| C4:2 B3:4 | C4:2 D4:4 | B3:2.~ | B3:2
+G4:4 | G4:2. | F#4:2 A4:4 | G4:2 D4:4 | D5:2.
+| C5:2. | B4:2 A4:4 | G4:2.~ | G4:2`;
+
+try { $('game').value = localStorage.getItem('ocarina-game') || 'n64'; } catch (e) {}
+$('game').addEventListener('change', () => { try { localStorage.setItem('ocarina-game', $('game').value); } catch (e) {} });
+
+let timer;
+for (const id of ['src', 'title', 'subtitle']) $(id).addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(render, 150); });
+for (const id of ['game', 'transpose', 'mpl', 'names', 'bars', 'ledger', 'fold']) $(id).addEventListener('change', render);
+document.fonts?.ready.then(render);
+render();
+</script>
+</body>
+</html>
