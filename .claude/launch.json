@@ -4,7 +4,7 @@
     {
       "name": "static",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "C:\\Users\\Rene Ayala\\Documents\\zelda_ocarina\\site"],
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "site"],
       "port": 8765
     }
   ]

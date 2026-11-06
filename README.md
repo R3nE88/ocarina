@@ -1,6 +1,6 @@
 # Partituras de Ocarina
 
-Generador de hojas de música con los botones de la ocarina de *Ocarina of Time* (N64 y 3DS).
+Generador de hojas de música con los botones de la ocarina de *Ocarina of Time* (N64, 3DS y el remake de Switch 2).
 Todo corre en el navegador: no hay backend.
 
 ## Estructura
