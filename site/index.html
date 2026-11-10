@@ -51,6 +51,26 @@
   .note.real.playing .ocb { stroke: #d8431f; stroke-width: 9; }
   .jump { display:none; }
   footer.fan { margin-top:18px; font-size:11.5px; color:#777; line-height:1.45; }
+  .rz-open, .rz-open body { overflow:hidden; }
+  .rz { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; background:#e9e5d8; overscroll-behavior:contain; }
+  .rz[hidden] { display:none; }
+  .rz-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; padding:8px 14px; background:#fbfaf5; }
+  .rz-bar h2 { flex:1 1 160px; min-width:0; margin:0; font-family:Almendra, Georgia, serif; color:#7a1e10; font-size:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rz-bar label { display:flex; align-items:center; gap:5px; margin:0; }
+  .rz-bar select { width:auto; padding:4px 6px; }
+  .rz-bar button { padding:7px 10px; }
+  #rzTime { font-variant-numeric:tabular-nums; color:#555; }
+  .rz-prog { height:4px; background:var(--line); }
+  .rz-prog i { display:block; height:100%; background:#8e2b1b; transform-origin:left; transform:scaleX(0); }
+  .rz-stage { position:relative; flex:1; min-height:0; }
+  .rz-stage svg { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .rz-lane { fill:#e07a1c; opacity:0; transition:opacity .08s; }
+  .rz-lane.on { opacity:.25; }
+  .rz-panel { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(380px, calc(100% - 32px)); padding:18px 20px; text-align:center; background:#fbfaf5; border:3px solid #8e2b1b; border-radius:6px; box-shadow:0 4px 18px rgba(0,0,0,.25); }
+  .rz-panel[hidden] { display:none; }
+  .rz-panel h3 { margin:0 0 6px; font-family:Almendra, Georgia, serif; color:#7a1e10; font-size:26px; }
+  .rz-panel p { margin:0 0 14px; }
+  .rz-panel button { padding:10px 26px; font-size:16px; }
   @media (max-width: 860px) {
     .app { display:block; height:auto; }
     aside { border-right:0; border-bottom:1px solid var(--line); overflow:visible; }
@@ -133,6 +153,7 @@
 
     <div class="btns">
       <button id="play">▶ Escuchar</button>
+      <button id="rhythm" title="Las notas caen en pantalla para que las toques en tu consola, sin mover la hoja">Modo ritmo</button>
       <button id="stop" class="secondary">■ Detener</button>
       <button id="png" class="secondary">PNG</button>
       <button id="svgBtn" class="secondary">SVG</button>
@@ -146,6 +167,41 @@
     </footer>
   </aside>
   <main><div id="sheet"></div></main>
+</div>
+
+<div class="rz" id="rz" role="dialog" aria-modal="true" aria-labelledby="rzTitle" hidden>
+  <div class="rz-bar">
+    <h2 id="rzTitle"></h2>
+    <span id="rzTime"></span>
+    <label>Tempo
+      <select id="rzTempo">
+        <option value="50">50%</option><option value="60">60%</option><option value="75">75%</option><option value="90">90%</option>
+        <option value="100" selected>100%</option><option value="110">110%</option><option value="125">125%</option>
+      </select>
+    </label>
+    <label>Caída
+      <select id="rzFall">
+        <option value="5">Lenta</option><option value="3.5" selected>Normal</option><option value="2.4">Rápida</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="rzGuide"> Melodía guía</label>
+    <button id="rzToggle"></button>
+    <button id="rzRestart" class="secondary">Reiniciar</button>
+    <button id="rzExit" class="secondary">Salir</button>
+  </div>
+  <div class="rz-prog"><i id="rzProg"></i></div>
+  <div class="rz-stage" id="rzStage">
+    <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs><linearGradient id="rzFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4e9a6"/><stop offset="1" stop-color="#f4e9a6" stop-opacity="0"/></linearGradient></defs>
+      <g id="rzBg"></g><g id="rzBars"></g><g id="rzTails"></g><g id="rzHit"></g><g id="rzHeads"></g><g id="rzTop"></g>
+      <text id="rzCount" text-anchor="middle" font-family="Almendra, Georgia, serif" font-weight="700" fill="#7a1e10"></text>
+    </svg>
+    <div class="rz-panel" id="rzPanel">
+      <h3 id="rzPanelTitle"></h3>
+      <p id="rzPanelText"></p>
+      <button id="rzGo"></button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -676,6 +732,7 @@ function render() {
           const bx = CONTENT_L + it.x + 2;
           body += `<line x1="${bx}" x2="${bx}" y1="${staffTop}" y2="${staffTop + 8 * S}" stroke="#9b6a5c" stroke-width="1.4"/>`;
         }
+        playList.push({ beats: 0, bar: true });
         return;
       }
       const n = it.ev;
@@ -683,7 +740,7 @@ function render() {
       const cx = CONTENT_L + it.x + 20, cy = staffTop + (38 - n.d) * S, id = 'n' + idx++;
       body += real && n.combo ? drawRealNote(n, cx, cy, staffTop, staffTop + diagTop, id) : drawButton(n, cx, cy, id, opts);
       if (opts.names) body += `<text x="${cx}" y="${staffTop + bot - 4}" text-anchor="middle" font-family="Arial" font-size="11" fill="#6b4a3a">${n.name}</text>`;
-      playList.push({ midi: n.combo ? n.pm + (real ? 12 : 0) : null, beats: n.beats, id }); // real alto C sounds an octave up
+      playList.push({ midi: n.combo ? n.pm + (real ? 12 : 0) : null, beats: n.beats, id, n }); // real alto C sounds an octave up
     });
     y = staffTop + bot + 14;
   }
@@ -717,6 +774,21 @@ function stop() {
   voices.forEach(o => { try { o.stop(); } catch (e) {} }); voices = [];
   document.querySelectorAll('.note.playing').forEach(e => e.classList.remove('playing'));
 }
+function ocarinaVoice(midi, t, dur) {
+  const f = 440 * Math.pow(2, (midi - 69) / 12);
+  const g = actx.createGain(); g.connect(actx.destination);
+  const o = actx.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.connect(g);
+  const g2 = actx.createGain(); g2.gain.value = 0.12; g2.connect(g);
+  const o2 = actx.createOscillator(); o2.type = 'triangle'; o2.frequency.value = f * 2; o2.connect(g2);
+  const lfo = actx.createOscillator(); lfo.frequency.value = 5.5;
+  const lg = actx.createGain(); lg.gain.value = f * 0.005; lfo.connect(lg); lg.connect(o.frequency);
+  const end = t + Math.max(0.08, dur * 0.92);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.28, t + 0.04);
+  g.gain.setValueAtTime(0.28, end - 0.05);
+  g.gain.linearRampToValueAtTime(0, end);
+  for (const osc of [o, o2, lfo]) { osc.start(t); osc.stop(end + 0.02); voices.push(osc); }
+}
 function play() {
   stop();
   actx = actx || new AudioContext();
@@ -732,21 +804,7 @@ function play() {
         document.getElementById(p.id)?.classList.add('playing');
       }, (t - t0 + 0.1) * 1000));
     }
-    if (p.midi != null) {
-      const f = 440 * Math.pow(2, (p.midi - 69) / 12);
-      const g = actx.createGain(); g.connect(actx.destination);
-      const o = actx.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.connect(g);
-      const g2 = actx.createGain(); g2.gain.value = 0.12; g2.connect(g);
-      const o2 = actx.createOscillator(); o2.type = 'triangle'; o2.frequency.value = f * 2; o2.connect(g2);
-      const lfo = actx.createOscillator(); lfo.frequency.value = 5.5;
-      const lg = actx.createGain(); lg.gain.value = f * 0.005; lfo.connect(lg); lg.connect(o.frequency);
-      const end = t + Math.max(0.08, dur * 0.92);
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.28, t + 0.04);
-      g.gain.setValueAtTime(0.28, end - 0.05);
-      g.gain.linearRampToValueAtTime(0, end);
-      for (const osc of [o, o2, lfo]) { osc.start(t); osc.stop(end + 0.02); voices.push(osc); }
-    }
+    if (p.midi != null) ocarinaVoice(p.midi, t, dur);
     t += dur;
   }
   timers.push(setTimeout(() => document.querySelectorAll('.note.playing').forEach(e => e.classList.remove('playing')), (t - t0 + 0.2) * 1000));
@@ -837,6 +895,248 @@ function playMidiAll() {
   pump();
   midiTimer = setInterval(pump, 100);
 }
+
+/* ---------- Rhythm mode: notes fall to a line and the player performs on their own console ---------- */
+// The page never hears the console, so there is no scoring: it only shows what to press and when.
+// The song clock counts beats, so changing the tempo mid-song keeps the falling notes in place.
+const rz = { state: 'idle', real: false, chart: null, beat: 0, start: 0, last: 0, raf: 0, wake: null,
+             live: [], liveBars: [], next: 0, nextBar: 0, sched: 0, lanes: [] };
+const RZ_TAIL = { // [first lane, other lanes] as fill/stroke
+  n64:  [['#1c3cc4', '#12225e'], ['#e6b000', '#7a5700']],
+  '3ds': [['#aea78f', '#3f3a2e'], ['#aea78f', '#3f3a2e']],
+  sw2:  [['#2a2a2e', '#0a0a0a'], ['#2a2a2e', '#0a0a0a']],
+  real: [['#c9745f', '#7a1e10'], ['#c9745f', '#7a1e10']],
+};
+const firstIndex = (arr, test) => { const i = arr.findIndex(test); return i < 0 ? arr.length : i; };
+const rzBaseBpm = () => +$('tempo').value || 110;
+const rzBps = () => rzBaseBpm() * +$('rzTempo').value / 6000; // beats per second at the chosen tempo %
+
+function rzChart() {
+  const ids = BUTTONS.map(b => b.id), notes = [], bars = [];
+  let beat = 0;
+  for (const p of playList) {
+    if (p.bar) { bars.push(beat); continue; }
+    if (p.n) {
+      const nearest = BUTTONS.reduce((best, b, i) => Math.abs(b.midi - p.n.pm) < Math.abs(BUTTONS[best].midi - p.n.pm) ? i : best, 0);
+      const lane = rz.real ? 0 : p.n.combo ? ids.indexOf(p.n.combo.button) : nearest;
+      notes.push({ n: p.n, midi: p.midi, beat, beats: p.beats, end: beat + p.beats * 0.9, lane }); // the 10% gap shows repeated notes apart
+    }
+    beat += p.beats;
+  }
+  return { notes, bars, total: beat };
+}
+
+function rzHead(n) {
+  if (rz.real && n.combo) {
+    return `<g class="note real">${ocarinaDiagram(-135, -91, 1, new Set(n.combo.holes.split(' ')))}` +
+           `<text x="150" y="-12" font-family="Arial, sans-serif" font-weight="700" font-size="36" fill="#7a1e10">${n.name}</text></g>`;
+  }
+  const button = drawButton(n, 0, 0, '', { ledger: false });
+  return rz.real ? `<g transform="scale(2.4)">${button}</g>` : button;
+}
+
+function rzLayout() {
+  const { width: W, height: H } = $('rzStage').getBoundingClientRect();
+  if (!W || !H) return;
+  const count = rz.real ? 1 : BUTTONS.length;
+  const trackW = Math.min(W, rz.real ? 460 : 660), x0 = (W - trackW) / 2, laneW = trackW / count;
+  const s = rz.real ? Math.min(0.62, H / 800) : Math.min(2.1, laneW / 58, H / 200);
+  const hitY = H - (rz.real ? 100 : 44) * s - 6; // leaves room for a stick arrow on a note enlarged at the line
+  const visible = +$('rzFall').value * rzBaseBpm() / 60 * (rz.real ? 0.7 : 1); // fingering diagrams are tall, so they need more spacing
+  const laneX = i => x0 + laneW * (i + 0.5);
+  Object.assign(rz, { H, s, hitY, visible, laneX, x0, trackW, ppb: hitY / visible, tailW: rz.real ? 34 : 13 * s, cueSize: Math.min(W, H) * 0.24 });
+
+  let bg = `<rect x="${x0}" y="0" width="${trackW}" height="${H}" fill="#f4e9a6"/>`, hit = '';
+  for (let i = 0; i < count; i++) {
+    bg += `<rect class="rz-lane" x="${x0 + laneW * i}" y="0" width="${laneW}" height="${H}"/>`;
+    if (i) bg += `<line x1="${x0 + laneW * i}" x2="${x0 + laneW * i}" y1="0" y2="${H}" stroke="#9b6a5c" stroke-width="1.4"/>`;
+    const receptor = rz.real ? ocarinaDiagram(-135, -91, 1, new Set())
+                             : drawButton({ combo: { button: BUTTONS[i].id, stick: 0, mod: 0 } }, 0, 0, '', { ledger: false });
+    hit += `<g opacity=".35" transform="translate(${laneX(i)} ${hitY}) scale(${s})">${receptor}</g>`;
+  }
+  hit = `<line x1="${x0}" x2="${x0 + trackW}" y1="${hitY}" y2="${hitY}" stroke="#8e2b1b" stroke-width="4"/>` + hit;
+  $('rzBg').innerHTML = bg;
+  $('rzHit').innerHTML = hit;
+  $('rzTop').innerHTML = `<rect x="${x0}" y="0" width="${trackW}" height="${H * 0.14}" fill="url(#rzFade)"/>` +
+    `<rect x="${x0 + 1.5}" y="1.5" width="${trackW - 3}" height="${H - 3}" fill="none" stroke="#8e2b1b" stroke-width="3"/>`;
+  rz.lanes = [...$('rzBg').querySelectorAll('.rz-lane')];
+  const countdown = $('rzCount');
+  countdown.setAttribute('x', W / 2);
+  countdown.setAttribute('y', hitY * 0.5);
+}
+
+function rzSeek(beat) {
+  const { notes, bars } = rz.chart;
+  rz.beat = beat;
+  for (const id of ['rzHeads', 'rzTails', 'rzBars']) $(id).textContent = '';
+  rz.live = []; rz.liveBars = [];
+  rz.next = firstIndex(notes, c => c.end > beat);
+  rz.nextBar = firstIndex(bars, b => b >= beat);
+  rz.sched = firstIndex(notes, c => c.beat >= beat);
+}
+
+function rzDraw() {
+  const { chart: { notes, bars, total }, beat, ppb, hitY, s, tailW, H, laneX } = rz;
+  const onStage = b => hitY - (b - beat) * ppb > -120;
+
+  while (rz.nextBar < bars.length && onStage(bars[rz.nextBar])) {
+    const b = bars[rz.nextBar++];
+    $('rzBars').insertAdjacentHTML('beforeend', '<line stroke="#9b6a5c" stroke-width="1.4" opacity=".7"/>');
+    rz.liveBars.push({ b, el: $('rzBars').lastElementChild });
+  }
+  rz.liveBars = rz.liveBars.filter(l => {
+    const y = hitY - (l.b - beat) * ppb;
+    if (y > H) { l.el.remove(); return false; }
+    l.el.setAttribute('x1', rz.x0); l.el.setAttribute('x2', rz.x0 + rz.trackW);
+    l.el.setAttribute('y1', y); l.el.setAttribute('y2', y);
+    return true;
+  });
+
+  while (rz.next < notes.length && onStage(notes[rz.next].beat)) {
+    const c = notes[rz.next++];
+    const [fill, stroke] = RZ_TAIL[$('game').value][c.lane ? 1 : 0];
+    $('rzTails').insertAdjacentHTML('afterbegin', `<rect fill="${fill}" fill-opacity=".7" stroke="${stroke}" stroke-width="1.2"/>`);
+    $('rzHeads').insertAdjacentHTML('afterbegin', `<g>${rzHead(c.n)}</g>`); // earlier notes stay on top
+    rz.live.push({ c, tail: $('rzTails').firstElementChild, head: $('rzHeads').firstElementChild });
+  }
+  const active = new Set();
+  rz.live = rz.live.filter(l => {
+    const { c } = l;
+    if (beat >= c.end) { l.tail.remove(); l.head.remove(); return false; }
+    const dy = Math.max(0, (c.beat - beat) * ppb), endDy = (c.end - beat) * ppb; // while held, the note waits on the line and its bar drains
+    l.head.setAttribute('transform', `translate(${laneX(c.lane)} ${hitY - dy}) scale(${s})`);
+    l.tail.setAttribute('x', laneX(c.lane) - tailW / 2);
+    l.tail.setAttribute('y', hitY - endDy);
+    l.tail.setAttribute('width', tailW);
+    l.tail.setAttribute('height', endDy - dy);
+    l.tail.setAttribute('rx', tailW / 2);
+    const on = beat >= c.beat;
+    if (on) active.add(c.lane);
+    l.head.querySelector('.note').classList.toggle('playing', on);
+    return true;
+  });
+  rz.lanes.forEach((el, i) => el.classList.toggle('on', active.has(i)));
+
+  const bps = rzBps();
+  const cue = rz.state !== 'run' || beat >= 0 ? '' : beat >= -4 ? Math.ceil(-beat) : 'Prepárate';
+  $('rzCount').textContent = cue;
+  $('rzCount').setAttribute('font-size', typeof cue === 'number' ? rz.cueSize : rz.cueSize * 0.4);
+  $('rzTime').textContent = `${fmtTime(Math.max(0, beat) / bps)} / ${fmtTime(total / bps)}`;
+  $('rzProg').style.transform = `scaleX(${Math.min(1, Math.max(0, beat) / total)})`;
+}
+
+function rzFrame(now) {
+  const dt = Math.min(0.25, (now - rz.last) / 1000), bps = rzBps(), { notes } = rz.chart; // the clamp absorbs a long stall
+  rz.last = now;
+  rz.beat += dt * bps;
+  while (rz.sched < notes.length && notes[rz.sched].beat < rz.beat + 0.3 * bps) { // each note is scheduled shortly before it sounds so it follows the screen
+    const c = notes[rz.sched++];
+    if (actx && $('rzGuide').checked && c.midi != null && c.beat >= rz.beat) ocarinaVoice(c.midi, actx.currentTime + (c.beat - rz.beat) / bps, c.beats / bps);
+  }
+  rzDraw();
+  if (rz.beat >= rz.chart.total + 1) { rzSetState('done'); return; }
+  rz.raf = requestAnimationFrame(rzFrame);
+}
+
+function rzAudio() {
+  if (!$('rzGuide').checked) return;
+  actx = actx || new AudioContext();
+  actx.resume();
+}
+
+async function rzKeepAwake() { // the screen goes untouched while both hands are on the console
+  try { rz.wake = await navigator.wakeLock?.request('screen'); } catch (e) {}
+}
+function rzAllowSleep() {
+  rz.wake?.release().catch(() => {});
+  rz.wake = null;
+}
+
+function rzSetState(state) {
+  rz.state = state;
+  cancelAnimationFrame(rz.raf);
+  const running = state === 'run';
+  if (running) {
+    rz.last = performance.now();
+    rz.raf = requestAnimationFrame(rzFrame);
+    rzKeepAwake();
+  } else {
+    stop();
+    rzAllowSleep();
+  }
+  const text = {
+    idle: [$('title').value.trim() || 'Modo ritmo',
+           rz.real ? 'Toma tu ocarina. Cada digitación baja hasta la línea: toca esa nota cuando llegue y sostenla mientras dure su barra.'
+                   : 'Prepara tu consola con la ocarina en mano. Cada botón baja por su carril: tócalo cuando llegue a la línea y mantenlo mientras dure su barra.',
+           'Comenzar'],
+    paused: ['En pausa', 'Al continuar, la canción retrocede 4 tiempos para que retomes el ritmo.', 'Continuar'],
+    done: ['¡Canción terminada!', 'Si quieres practicarla más despacio, baja el tempo arriba.', 'Otra vez'],
+  }[state];
+  $('rzPanel').hidden = running;
+  $('rzToggle').textContent = running ? 'Pausa' : text[2];
+  if (text) [$('rzPanelTitle').textContent, $('rzPanelText').textContent, $('rzGo').textContent] = text;
+}
+
+function rzStart() {
+  stop();
+  rzAudio();
+  rz.start = -Math.ceil(Math.max(4, rz.visible, 5 * rzBps())); // at least 5 s to get back to the controller
+  rzSeek(rz.start);
+  rzSetState('run');
+}
+
+function rzToggle() {
+  if (rz.state === 'run') { rzSetState('paused'); return; }
+  if (rz.state !== 'paused') { rzStart(); return; }
+  rzAudio();
+  rzSeek(Math.max(rz.start, rz.beat - 4));
+  rzSetState('run');
+}
+
+function rzOpen() {
+  render(); // pick up edits still waiting on the input debounce
+  rz.real = $('game').value === 'real';
+  rz.chart = rzChart();
+  if (!rz.chart.notes.length) {
+    $('msg').insertAdjacentHTML('beforeend', '<div class="warn">Escribe o importa una melodía para usar el modo ritmo.</div>');
+    return;
+  }
+  stop();
+  $('rzTitle').textContent = $('title').value.trim() || 'Modo ritmo';
+  document.documentElement.classList.add('rz-open');
+  document.querySelector('.app').inert = true;
+  $('rz').hidden = false;
+  rzLayout();
+  rzSeek(-Math.ceil(rz.visible + 1));
+  rzDraw();
+  rzSetState('idle');
+  $('rzGo').focus();
+}
+
+function rzClose() {
+  rzSetState('idle');
+  $('rz').hidden = true;
+  document.documentElement.classList.remove('rz-open');
+  document.querySelector('.app').inert = false;
+  $('rhythm').focus();
+}
+
+$('rhythm').onclick = rzOpen;
+$('rzGo').onclick = $('rzToggle').onclick = rzToggle;
+$('rzRestart').onclick = rzStart;
+$('rzExit').onclick = rzClose;
+$('rzFall').onchange = () => { rzLayout(); rzDraw(); };
+$('rzGuide').onchange = () => { if ($('rzGuide').checked) { if (rz.state === 'run') rzAudio(); } else stop(); };
+// after a mouse click, focus must not stay on a control or Space would press it instead of pausing
+$('rz').addEventListener('click', e => { if (e.detail) e.target.closest('button')?.blur(); });
+$('rz').addEventListener('change', e => e.target.blur());
+document.addEventListener('keydown', e => {
+  if ($('rz').hidden) return;
+  if (e.key === 'Escape') rzClose();
+  else if (e.code === 'Space' && !/^(BUTTON|SELECT|INPUT)$/.test(e.target.tagName)) { e.preventDefault(); rzToggle(); }
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && rz.state === 'run') rzSetState('paused'); });
+new ResizeObserver(() => { if (!$('rz').hidden) { rzLayout(); rzDraw(); } }).observe($('rzStage'));
 
 /* ---------- Export ---------- */
 function download(blob, name) {
