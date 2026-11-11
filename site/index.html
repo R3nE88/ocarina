@@ -57,6 +57,31 @@
   .note.real.playing .ocb { stroke: #d8431f; stroke-width: 9; }
   .jump { display:none; }
   footer.fan { margin-top:18px; font-size:11.5px; color:#777; line-height:1.45; }
+  .nav { display:flex; flex-wrap:wrap; gap:4px 14px; margin:-4px 0 6px; font-weight:600; }
+  .nav a, .cbox a { color:var(--green); }
+  button.link { background:none; color:var(--green); padding:0; font-weight:600; text-decoration:underline; }
+  button:disabled { opacity:.6; cursor:default; }
+  .cbox { margin-top:16px; padding-top:12px; border-top:1px solid var(--line); }
+  .cbox h3 { font-family:Almendra, Georgia, serif; color:#7a1e10; font-size:17px; margin:16px 0 6px; }
+  .cbox .btns { align-items:center; }
+  .badge { display:inline-block; margin-left:6px; padding:1px 7px; border-radius:10px; font-size:11.5px; background:#fdecea; color:#8a1c1c; }
+  .like { background:#fff; color:#8e2b1b; border:2px solid #8e2b1b; padding:5px 12px; }
+  .like.on { background:#8e2b1b; color:#fff; }
+  .comments { list-style:none; margin:0; padding:0; }
+  .comments li { padding:7px 0; border-bottom:1px solid #ece8da; }
+  .comments li.empty { color:#777; border:0; }
+  .comments p { margin:3px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .c-meta { font-size:12px; color:#6b6556; display:flex; gap:8px; align-items:baseline; }
+  .c-meta button { margin-left:auto; font-size:12px; }
+  #cForm textarea { height:auto; font:inherit; margin-top:8px; }
+  dialog.dlg { width:min(420px, calc(100% - 32px)); padding:18px 20px; background:#fbfaf5; border:3px solid #8e2b1b; border-radius:6px; box-shadow:0 4px 18px rgba(0,0,0,.25); color:var(--ink); }
+  dialog.dlg::backdrop { background:rgba(40,25,10,.35); }
+  dialog.dlg h3 { margin:0 0 8px; font-family:Almendra, Georgia, serif; color:#7a1e10; font-size:24px; }
+  dialog .inline { display:flex; gap:6px; align-items:center; font-weight:400; }
+  dialog textarea { height:auto; font:inherit; }
+  .hint { font-size:12.5px; color:#6b6556; margin:8px 0; }
+  .ok, .warn-box { padding:6px 8px; border-radius:6px; margin-top:8px; font-size:12.5px; background:#eef3e6; }
+  .warn-box { background:#fdecea; color:#8a1c1c; }
   .rz-open, .rz-open body { overflow:hidden; }
   .rz { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; background:#e9e5d8; overscroll-behavior:contain; }
   .rz[hidden] { display:none; }
@@ -108,7 +133,11 @@
       <h1 data-i18n="app.title">Partituras de Ocarina</h1>
       <select id="lang" aria-label="Idioma / Language"><option value="es">Español</option><option value="en">English</option></select>
     </div>
-    <a class="jump" href="#sheet" data-i18n="jump">Ver la hoja ↓</a>
+    <nav class="nav">
+      <a href="/comunidad" data-i18n="nav.community">Comunidad</a>
+      <a href="/comunidad" id="myLink" data-i18n="nav.mine" hidden>Mis partituras</a>
+      <a class="jump" href="#sheet" data-i18n="jump">Ver la hoja ↓</a>
+    </nav>
     <label for="game" data-i18n="game">Versión del juego</label>
     <select id="game">
       <option value="n64">Nintendo 64</option>
@@ -174,8 +203,24 @@
       <button id="png" class="secondary">PNG</button>
       <button id="svgBtn" class="secondary">SVG</button>
       <button id="print" class="secondary" data-i18n="btn.print">Imprimir / PDF</button>
+      <button id="share" data-i18n="btn.share">Compartir</button>
     </div>
     <div id="msg"></div>
+    <section id="cbox" class="cbox" hidden aria-live="polite">
+      <div><span id="cAuthor"></span><span id="cHidden" class="badge" data-i18n="c.hiddenBadge" hidden></span></div>
+      <div class="btns">
+        <button id="cLike" class="like" aria-pressed="false" data-i18n-title="c.like">♥ <span id="cLikes">0</span></button>
+        <button id="cDelete" class="secondary" data-i18n="c.delete" hidden>Eliminar</button>
+        <button id="cReport" class="link" data-i18n="c.report">Reportar</button>
+      </div>
+      <div id="cMsg"></div>
+      <h3 data-i18n="c.comments">Comentarios</h3>
+      <ol id="cList" class="comments"></ol>
+      <form id="cForm">
+        <textarea id="cBody" rows="3" maxlength="1000" required data-i18n-placeholder="c.placeholder" data-i18n-label="c.comments"></textarea>
+        <div class="btns"><button data-i18n="c.send">Comentar</button></div>
+      </form>
+    </section>
     <footer class="fan">
       <span data-i18n-html="footer"></span>
       <span data-i18n="footer.local"></span>
@@ -219,7 +264,35 @@
   </div>
 </div>
 
+<dialog id="shareDlg" class="dlg" aria-labelledby="shTitle">
+  <form id="shareForm">
+    <h3 id="shTitle" data-i18n="share.title">Compartir partitura</h3>
+    <label for="shName" data-i18n="share.name">Tu nombre en la comunidad</label>
+    <input type="text" id="shName" maxlength="40">
+    <label class="inline"><input type="checkbox" id="shListed" checked> <span data-i18n="share.listed">Mostrar en la galería de la comunidad</span></label>
+    <p class="hint" data-i18n="share.hint"></p>
+    <div id="shLinkBox" hidden>
+      <label for="shLink" data-i18n="share.link">Enlace</label>
+      <div class="row"><input type="text" id="shLink" readonly><button type="button" id="shCopy" style="flex:0 0 auto" data-i18n="share.copy">Copiar</button></div>
+    </div>
+    <div id="shMsg"></div>
+    <div class="btns"><button id="shGo"></button><button type="button" class="secondary" data-close data-i18n="share.close">Cerrar</button></div>
+  </form>
+</dialog>
+
+<dialog id="reportDlg" class="dlg" aria-labelledby="rpTitle">
+  <form id="reportForm">
+    <h3 id="rpTitle" data-i18n="report.title">Reportar</h3>
+    <p class="hint" data-i18n="report.hint"></p>
+    <label for="rpReason" data-i18n="report.reason">Motivo (opcional)</label>
+    <textarea id="rpReason" rows="3" maxlength="300"></textarea>
+    <div id="rpMsg"></div>
+    <div class="btns"><button id="rpGo" data-i18n="report.send">Enviar reporte</button><button type="button" class="secondary" data-close data-i18n="share.close">Cerrar</button></div>
+  </form>
+</dialog>
+
 <script src="/i18n.js"></script>
+<script src="/api.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 
@@ -1353,6 +1426,183 @@ $('file').onchange = async e => {
   e.target.value = '';
 };
 
+/* ---------- Community: share by link, likes, comments and reports ---------- */
+let current = null; // the shared sheet open in the editor, as the API returns it
+
+const scoreUrl = id => `${location.origin}/s/${id}`;
+const pageTitle = () => current ? `${current.title} · ${t('app.title')}` : t('meta.title');
+const box = (el, text, warn) => { $(el).innerHTML = text ? `<div class="${warn ? 'warn-box' : 'ok'}">${esc(text)}</div>` : ''; };
+
+const scoreFromEditor = () => ({
+  title: $('title').value.trim() || t('share.untitled'),
+  subtitle: $('subtitle').value.trim(),
+  game: $('game').value,
+  listed: $('shListed').checked,
+  data: {
+    src: $('src').value, transpose: $('transpose').value, mpl: +$('mpl').value,
+    tempo: Math.min(300, Math.max(30, Math.round(+$('tempo').value) || 110)),
+    names: $('names').checked, bars: $('bars').checked, ledger: $('ledger').checked, fold: $('fold').checked,
+  },
+});
+
+function editorFromScore(s) {
+  const d = s.data;
+  $('game').value = s.game; $('title').value = s.title; $('subtitle').value = s.subtitle;
+  $('src').value = d.src; $('transpose').value = d.transpose; $('mpl').value = d.mpl; $('tempo').value = d.tempo;
+  for (const k of ['names', 'bars', 'ledger', 'fold']) $(k).checked = d[k];
+  $('trackBox').hidden = true;
+  render();
+}
+
+function showCommunity(s) {
+  current = s;
+  document.title = pageTitle();
+  $('cbox').hidden = !s;
+  $('share').textContent = t(s?.mine ? 'btn.shareMine' : 'btn.share');
+  if (!s) return;
+  $('cAuthor').innerHTML = t('c.by', { name: `<a href="/comunidad?u=${encodeURIComponent(s.author_id)}">${escHtml(s.author_name)}</a>` });
+  $('cHidden').hidden = !s.hidden;
+  $('cDelete').hidden = !s.mine;
+  $('cReport').hidden = s.mine;
+  $('shListed').checked = s.listed;
+  setLike(s.likes, s.liked);
+  box('cMsg');
+  loadComments();
+}
+
+async function openShared(id) {
+  try {
+    const s = await api.call('GET', '/api/scores/' + encodeURIComponent(id));
+    editorFromScore(s);
+    showCommunity(s);
+  } catch (e) {
+    $('msg').insertAdjacentHTML('afterbegin', `<div class="warn">${esc(e.status === 404 ? t('share.notFound') : e.message)}</div>`);
+  }
+}
+
+$('share').onclick = async () => {
+  box('shMsg');
+  await api.loadMe();
+  $('shName').value = api.me?.name || '';
+  $('shName').placeholder = t('device.default', { n: '1234' });
+  $('shGo').textContent = t(!current ? 'share.publish' : current.mine ? 'share.update' : 'share.publishCopy');
+  $('shLinkBox').hidden = !current;
+  if (current) $('shLink').value = scoreUrl(current.id);
+  $('shareDlg').showModal();
+};
+
+$('shareForm').onsubmit = async e => {
+  e.preventDefault();
+  $('shGo').disabled = true;
+  try {
+    const name = $('shName').value.trim();
+    await api.ensureDevice(name);
+    if (name && name !== api.me.name) api.me = await api.call('PATCH', '/api/me', { name });
+    const body = scoreFromEditor();
+    const id = current?.mine ? (await api.call('PUT', '/api/scores/' + current.id, body)).id
+                             : (await api.call('POST', '/api/scores', body)).id;
+    history.replaceState(null, '', '/s/' + id);
+    showCommunity(await api.call('GET', '/api/scores/' + id));
+    $('myLink').hidden = false;
+    $('myLink').href = '/comunidad?u=' + encodeURIComponent(api.me.id);
+    $('shLink').value = scoreUrl(id);
+    $('shLinkBox').hidden = false;
+    $('shGo').textContent = t('share.update');
+    box('shMsg', t('share.done'));
+    $('shLink').select();
+  } catch (err) {
+    box('shMsg', err.message, true);
+  }
+  $('shGo').disabled = false;
+};
+
+$('shCopy').onclick = async () => {
+  if (navigator.share && matchMedia('(pointer: coarse)').matches) { // phones: the system share sheet
+    navigator.share({ title: current?.title, url: $('shLink').value }).catch(() => {});
+    return;
+  }
+  try { await navigator.clipboard.writeText($('shLink').value); box('shMsg', t('share.copied')); }
+  catch (e) { $('shLink').select(); }
+};
+
+$('cDelete').onclick = async () => {
+  if (!confirm(t('c.confirmDelete'))) return;
+  try {
+    await api.call('DELETE', '/api/scores/' + current.id);
+    history.replaceState(null, '', '/');
+    showCommunity(null);
+    $('msg').insertAdjacentHTML('afterbegin', `<div>${esc(t('share.deleted'))}</div>`);
+  } catch (e) { box('cMsg', e.message, true); }
+};
+
+function setLike(n, on) {
+  current.liked = on;
+  $('cLikes').textContent = n;
+  $('cLike').setAttribute('aria-pressed', on);
+  $('cLike').classList.toggle('on', on);
+}
+$('cLike').onclick = async () => {
+  try {
+    await api.ensureDevice();
+    const r = await api.call(current.liked ? 'DELETE' : 'POST', `/api/scores/${current.id}/like`);
+    setLike(r.likes, r.liked);
+  } catch (e) { box('cMsg', e.message, true); }
+};
+
+async function loadComments() {
+  const id = current.id;
+  const list = await api.call('GET', `/api/scores/${id}/comments`).catch(() => []);
+  if (current?.id !== id) return;
+  $('cList').innerHTML = list.length ? list.map(c => `<li data-id="${c.id}">
+      <div class="c-meta"><a href="/comunidad?u=${encodeURIComponent(c.author_id)}">${escHtml(c.author_name)}</a><span>${fmtDate(c.created_at)}</span>
+        <button type="button" class="link" data-act="${c.mine ? 'del' : 'report'}">${esc(t(c.mine ? 'c.delete' : 'c.report'))}</button></div>
+      <p>${escHtml(c.body)}</p></li>`).join('')
+    : `<li class="empty">${esc(t('c.none'))}</li>`;
+}
+$('cList').onclick = async e => {
+  const b = e.target.closest('button[data-act]');
+  if (!b) return;
+  const id = b.closest('li').dataset.id;
+  if (b.dataset.act === 'report') return openReport('comment', id);
+  if (!confirm(t('c.confirmDeleteComment'))) return;
+  try { await api.call('DELETE', '/api/comments/' + id); loadComments(); }
+  catch (err) { box('cMsg', err.message, true); }
+};
+$('cForm').onsubmit = async e => {
+  e.preventDefault();
+  const body = $('cBody').value.trim();
+  if (!body) return;
+  try {
+    await api.ensureDevice();
+    await api.call('POST', `/api/scores/${current.id}/comments`, { body });
+    $('cBody').value = '';
+    box('cMsg');
+    loadComments();
+  } catch (err) { box('cMsg', err.message, true); }
+};
+
+let reporting = null;
+function openReport(kind, target) {
+  reporting = { kind, target };
+  $('rpReason').value = '';
+  box('rpMsg');
+  $('rpGo').disabled = false;
+  $('reportDlg').showModal();
+}
+$('cReport').onclick = () => openReport('score', current.id);
+$('reportForm').onsubmit = async e => {
+  e.preventDefault();
+  $('rpGo').disabled = true;
+  try {
+    await api.ensureDevice();
+    const r = await api.call('POST', '/api/reports', { ...reporting, reason: $('rpReason').value.trim() });
+    box('rpMsg', t(r.hidden ? 'report.hidden' : 'report.done'));
+    if (r.hidden && reporting.kind === 'comment') loadComments();
+  } catch (err) { box('rpMsg', err.message, true); $('rpGo').disabled = false; }
+};
+
+document.addEventListener('click', e => { if (e.target.closest('[data-close]')) e.target.closest('dialog').close(); });
+
 /* ---------- Init ---------- */
 const tsel = $('transpose');
 tsel.innerHTML = '<option value="auto" data-i18n="transpose.auto"></option>' +
@@ -1372,10 +1622,11 @@ try { $('game').value = localStorage.getItem('ocarina-game') || 'n64'; } catch (
 $('game').addEventListener('change', () => { try { localStorage.setItem('ocarina-game', $('game').value); } catch (e) {} });
 
 applyI18n();
-document.title = t('meta.title');
+document.title = pageTitle();
+$('share').textContent = t('btn.share');
 $('lang').value = LANG;
 $('lang').onchange = () => setLang($('lang').value, () => {
-  document.title = t('meta.title');
+  showCommunity(current);
   render();
 });
 
@@ -1384,6 +1635,14 @@ for (const id of ['src', 'title', 'subtitle']) $(id).addEventListener('input', (
 for (const id of ['game', 'transpose', 'mpl', 'names', 'bars', 'ledger', 'fold']) $(id).addEventListener('change', render);
 document.fonts?.ready.then(render);
 render();
+
+const sharedId = location.pathname.match(/^\/s\/([\w-]+)$/)?.[1];
+if (sharedId) openShared(sharedId);
+api.loadMe().then(me => {
+  if (!me) return;
+  $('myLink').hidden = false;
+  $('myLink').href = '/comunidad?u=' + encodeURIComponent(me.id);
+});
 </script>
 </body>
 </html>

@@ -1,0 +1,7 @@
+.git
+.claude
+.env
+tools
+**/__pycache__
+**/.pytest_cache
+server/test_api.py
