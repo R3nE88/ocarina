@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comunidad · Partituras de Ocarina</title>
+<meta name="description" content="Partituras de ocarina de Ocarina of Time compartidas por la comunidad: ábrelas, escúchalas y tócalas en modo ritmo.">
+<meta name="theme-color" content="#7a1e10">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Comunidad · Partituras de Ocarina">
+<meta property="og:image" content="https://ocarina.forja-digital.com/og.png">
+<link rel="preload" href="/fonts/almendra-700.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face { font-family:Almendra; font-weight:700; font-display:swap; src:url(/fonts/almendra-700.woff2) format("woff2"); }
+  :root { --green:#2f6b3a; --ink:#222; --line:#d6d2c4; --red:#7a1e10; --frame:#8e2b1b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 system-ui, "Segoe UI", sans-serif; color:var(--ink); background:#e9e5d8; }
+  a { color:var(--green); }
+  header { background:#fbfaf5; border-bottom:1px solid var(--line); }
+  .bar { max-width:1040px; margin:0 auto; padding:12px 16px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px; }
+  .bar h1 { margin:0; flex:1 1 auto; font:700 24px Almendra, Georgia, serif; color:var(--red); }
+  .bar h1 a { color:inherit; text-decoration:none; }
+  .bar nav { display:flex; gap:14px; font-weight:600; }
+  main { max-width:1040px; margin:0 auto; padding:18px 16px 40px; }
+  h2 { font:700 26px Almendra, Georgia, serif; color:var(--red); margin:0 0 4px; }
+  .intro { margin:0 0 16px; color:#4a4436; }
+  input[type=text], input[type=search], select, textarea { padding:7px 9px; border:1px solid #c9c4b3; border-radius:6px; font:inherit; background:#fff; }
+  button { padding:7px 12px; border:0; border-radius:6px; background:var(--green); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+  button.secondary { background:#6b6556; }
+  button.danger { background:var(--frame); }
+  button:disabled { opacity:.6; cursor:default; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px; }
+  .tabs { display:flex; gap:4px; }
+  .tabs button { background:#fff; color:var(--green); border:2px solid var(--green); padding:5px 12px; }
+  .tabs button[aria-selected="true"] { background:var(--green); color:#fff; }
+  .controls input[type=search] { flex:1 1 200px; min-width:0; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:16px; }
+  .card { position:relative; background:#f4e9a6; border:3px solid var(--frame); border-radius:3px; padding:14px 16px 12px;
+          box-shadow:0 2px 4px rgba(60,40,10,.12), 0 8px 24px rgba(60,40,10,.10); transition:transform .12s, box-shadow .12s; }
+  .card:hover { transform:translateY(-2px); box-shadow:0 4px 8px rgba(60,40,10,.16), 0 12px 28px rgba(60,40,10,.16); }
+  .card h3 { margin:0; font:700 21px/1.15 Almendra, Georgia, serif; overflow-wrap:anywhere; }
+  .card h3 a { color:var(--red); text-decoration:none; }
+  .card h3 a::after { content:""; position:absolute; inset:0; } /* the whole card opens the sheet */
+  .card h3 a:focus-visible { outline:none; }
+  .card:focus-within { outline:3px solid var(--green); outline-offset:2px; }
+  .card .sub { margin:4px 0 0; font:700 11.5px Arial, sans-serif; letter-spacing:.5px; text-transform:uppercase; color:#b5560c; overflow-wrap:anywhere; }
+  .card .meta { margin:8px 0 0; font-size:12.5px; color:#3b2a20; }
+  .card .meta a { position:relative; z-index:1; }
+  .pill { display:inline-block; margin-right:6px; padding:0 7px; border:1px solid #9b6a5c; border-radius:10px; font-size:11.5px; color:#6b4a3a; background:#fbf4cc; }
+  .pill.warn { background:#fdecea; color:#8a1c1c; border-color:#d9a19a; }
+  .heart { color:var(--frame); font-weight:700; }
+  .empty { padding:30px 10px; text-align:center; color:#5d5646; }
+  .more { display:block; margin:20px auto 0; }
+  .panel { background:#fbfaf5; border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin:0 0 18px; }
+  .panel h3 { margin:0 0 6px; font:700 18px Almendra, Georgia, serif; color:var(--red); }
+  .panel .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; }
+  .panel .row input { flex:1 1 180px; min-width:0; }
+  .hint { font-size:12.5px; color:#6b6556; margin:4px 0; }
+  .ok, .warn-box { padding:6px 8px; border-radius:6px; margin-top:8px; font-size:12.5px; background:#eef3e6; }
+  .warn-box { background:#fdecea; color:#8a1c1c; }
+  .reports { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+  .reports li { background:#fbfaf5; border:1px solid var(--line); border-left:5px solid #c9c4b3; border-radius:6px; padding:10px 12px; }
+  .reports li.hidden-item { border-left-color:var(--frame); }
+  .reports .text { margin:4px 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .reports .acts { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  footer.fan { max-width:1040px; margin:0 auto; padding:0 16px 30px; font-size:11.5px; color:#777; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1><a href="/comunidad" data-i18n="cm.title">Comunidad</a></h1>
+    <nav>
+      <a href="/" data-i18n="nav.editor">← Editor</a>
+      <a href="/comunidad?u=me" data-i18n="nav.mine">Mis partituras</a>
+    </nav>
+    <select id="lang" aria-label="Idioma / Language"><option value="es">Español</option><option value="en">English</option></select>
+  </div>
+</header>
+
+<main>
+  <section id="gallery" hidden>
+    <h2 id="listTitle"></h2>
+    <p class="intro" id="listIntro"></p>
+
+    <div id="device" class="panel" hidden>
+      <h3 data-i18n="dev.title">Tu dispositivo</h3>
+      <p class="hint" data-i18n="dev.hint"></p>
+      <div id="devHas">
+        <div class="row">
+          <input type="text" id="devName" maxlength="40" data-i18n-label="dev.name">
+          <button id="devSave" data-i18n="dev.save">Guardar nombre</button>
+          <button id="devCopy" class="secondary" data-i18n="dev.copy">Copiar mi código</button>
+        </div>
+      </div>
+      <div class="row">
+        <input type="text" id="devCode" autocomplete="off" spellcheck="false" data-i18n-placeholder="dev.usePh" data-i18n-label="dev.use">
+        <button id="devUse" class="secondary" data-i18n="dev.useBtn">Usar código</button>
+      </div>
+      <div id="devMsg"></div>
+    </div>
+
+    <div class="controls" id="filters">
+      <div class="tabs" role="tablist">
+        <button role="tab" data-sort="trending" data-i18n="cm.trending" data-i18n-title="cm.trendingHint">Tendencias</button>
+        <button role="tab" data-sort="top" data-i18n="cm.top">Más votadas</button>
+        <button role="tab" data-sort="new" data-i18n="cm.new">Recientes</button>
+      </div>
+      <input type="search" id="q" maxlength="100" data-i18n-placeholder="cm.search" data-i18n-label="cm.search">
+      <select id="gameFilter" data-i18n-label="game">
+        <option value="" data-i18n="cm.allGames">Todos los juegos</option>
+        <option value="n64">Nintendo 64</option>
+        <option value="3ds">Nintendo 3DS</option>
+        <option value="sw2">Nintendo Switch 2</option>
+        <option value="real" data-i18n="game.realShort">Ocarina real</option>
+      </select>
+    </div>
+
+    <div id="grid" class="grid" aria-live="polite"></div>
+    <div id="listMsg"></div>
+    <button id="more" class="more secondary" data-i18n="cm.more" hidden>Cargar más</button>
+  </section>
+
+  <section id="admin" hidden>
+    <h2 data-i18n="adm.title">Moderación</h2>
+    <form id="admLogin" class="panel">
+      <label for="admToken" data-i18n="adm.token">Clave de administrador</label>
+      <div class="row"><input type="text" id="admToken" autocomplete="off"><button data-i18n="adm.enter">Entrar</button></div>
+      <div id="admLoginMsg"></div>
+    </form>
+    <div id="admBody" hidden>
+      <p class="intro"><span data-i18n="adm.intro"></span> <button type="button" id="admLogout" class="secondary" data-i18n="adm.logout">Salir</button></p>
+      <ul id="admList" class="reports"></ul>
+      <div id="admMsg"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="fan" data-i18n-html="footer"></footer>
+
+<script src="/i18n.js"></script>
+<script src="/api.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const box = (el, text, warn) => { $(el).innerHTML = text ? `<div class="${warn ? 'warn-box' : 'ok'}">${escHtml(text)}</div>` : ''; };
+const profileLink = (id, name) => `<a href="/comunidad?u=${encodeURIComponent(id)}">${escHtml(name)}</a>`;
+
+/* ---------- Gallery and profiles ---------- */
+const list = { sort: 'trending', q: '', game: '', author: '', offset: 0, seq: 0, profileName: '' };
+
+const commentsLabel = n => t(n === 1 ? 'cm.comment1' : 'cm.comments', { n });
+const card = s => `<article class="card">
+  <h3><a href="/s/${encodeURIComponent(s.id)}">${escHtml(s.title)}</a></h3>
+  ${s.subtitle ? `<p class="sub">${escHtml(s.subtitle)}</p>` : ''}
+  <p class="meta"><span class="pill">${escHtml(gameName(s.game))}</span>${s.listed ? '' : `<span class="pill">${escHtml(t('cm.unlisted'))}</span>`}${s.hidden ? `<span class="pill warn">${escHtml(t('c.hiddenBadge'))}</span>` : ''}</p>
+  <p class="meta">${t('cm.by', { name: profileLink(s.author_id, s.author_name) })} · ${fmtDate(s.created_at)}</p>
+  <p class="meta"><span class="heart" aria-label="${escHtml(t('c.like'))}">♥ ${s.likes}</span> · ${escHtml(commentsLabel(s.comments))}</p>
+</article>`;
+
+async function loadList(reset) {
+  if (reset) { list.offset = 0; $('grid').innerHTML = ''; }
+  const seq = ++list.seq;
+  const qs = new URLSearchParams({ sort: list.sort, q: list.q, game: list.game, author: list.author, offset: list.offset });
+  $('more').disabled = true;
+  try {
+    const r = await api.call('GET', '/api/scores?' + qs);
+    if (seq !== list.seq) return; // a newer search already replaced this one
+    $('grid').insertAdjacentHTML('beforeend', r.items.map(card).join(''));
+    list.offset += r.items.length;
+    $('more').hidden = !r.more;
+    const empty = !$('grid').children.length;
+    $('listMsg').innerHTML = !empty ? '' : `<p class="empty">${escHtml(t(list.q || list.game ? 'cm.noResults' : 'cm.empty'))}<br>${escHtml(t('cm.emptyHint'))}</p>`;
+  } catch (e) {
+    if (seq === list.seq) box('listMsg', e.message, true);
+  }
+  $('more').disabled = false;
+}
+
+function listHeading() {
+  if (list.author) {
+    $('listTitle').textContent = list.profileName ? t('cm.profile', { name: list.profileName }) : t('nav.mine');
+    $('listIntro').textContent = '';
+    document.title = `${$('listTitle').textContent} · ${t('app.title')}`;
+  } else {
+    $('listTitle').textContent = t('cm.title');
+    $('listIntro').textContent = t('cm.intro');
+    document.title = `${t('cm.title')} · ${t('app.title')}`;
+  }
+  for (const b of document.querySelectorAll('[data-sort]')) b.setAttribute('aria-selected', b.dataset.sort === list.sort);
+}
+
+document.querySelector('.tabs').onclick = e => {
+  const b = e.target.closest('[data-sort]');
+  if (!b || b.dataset.sort === list.sort) return;
+  list.sort = b.dataset.sort;
+  listHeading();
+  loadList(true);
+};
+let qTimer;
+$('q').oninput = () => { clearTimeout(qTimer); qTimer = setTimeout(() => { list.q = $('q').value.trim(); loadList(true); }, 250); };
+$('gameFilter').onchange = () => { list.game = $('gameFilter').value; loadList(true); };
+$('more').onclick = () => loadList(false);
+
+async function showGallery() {
+  $('gallery').hidden = false;
+  $('filters').hidden = false;
+  let u = params.get('u');
+  if (u === 'me') { // "My sheets": this browser's device, or just the device panel if it has none yet
+    const me = await api.loadMe();
+    if (me) { history.replaceState(null, '', '/comunidad?u=' + encodeURIComponent(me.id)); u = me.id; }
+    else { showDevice(null); $('filters').hidden = true; list.author = 'me'; listHeading(); box('listMsg', t('dev.none')); return; }
+  }
+  if (u) {
+    list.author = u;
+    list.sort = 'new';
+    try { list.profileName = (await api.call('GET', '/api/devices/' + encodeURIComponent(u))).name; }
+    catch (e) { listHeading(); box('listMsg', t('cm.profileMissing'), true); $('filters').hidden = true; return; }
+    const me = await api.loadMe();
+    if (me?.id === u) showDevice(me);
+  }
+  listHeading();
+  loadList(true);
+}
+
+/* ---------- This browser's identity ---------- */
+function showDevice(me) {
+  $('device').hidden = false;
+  $('devHas').hidden = !me;
+  if (me) $('devName').value = me.name;
+}
+$('devSave').onclick = async () => {
+  try {
+    api.me = await api.call('PATCH', '/api/me', { name: $('devName').value.trim() });
+    list.profileName = api.me.name;
+    listHeading();
+    box('devMsg', t('dev.saved'));
+    loadList(true);
+  } catch (e) { box('devMsg', e.message, true); }
+};
+$('devCopy').onclick = async () => {
+  try { await navigator.clipboard.writeText(api.token()); box('devMsg', t('dev.copied')); }
+  catch (e) { $('devCode').value = api.token(); $('devCode').select(); }
+};
+$('devUse').onclick = async () => {
+  const code = $('devCode').value.trim(), old = api.token();
+  if (!code || code === old) return;
+  if (api.me && !confirm(t('dev.confirmReplace', { name: api.me.name }))) return;
+  api.setToken(code);
+  try {
+    const me = await api.call('GET', '/api/me');
+    location.href = '/comunidad?u=' + encodeURIComponent(me.id);
+  } catch (e) {
+    api.setToken(old);
+    box('devMsg', t('dev.badCode'), true);
+  }
+};
+
+/* ---------- Moderation (/comunidad?admin) ---------- */
+const reportRow = r => {
+  const kind = t(r.kind === 'score' ? 'adm.score' : 'adm.comment');
+  const open = r.score_id ? ` · <a href="/s/${encodeURIComponent(r.score_id)}" target="_blank" rel="noopener">${escHtml(t('adm.open'))}</a>` : '';
+  return `<li class="${r.hidden ? 'hidden-item' : ''}" data-kind="${r.kind}" data-target="${escHtml(r.target)}" data-author="${escHtml(r.author_id || '')}">
+    <div><b>${escHtml(kind)}</b> · ${escHtml(t('adm.reports', { n: r.reports }))} · ${escHtml(t(r.hidden ? 'adm.hidden' : 'adm.visible'))}${open}</div>
+    <p class="text">${escHtml(r.text ?? t('adm.gone'))}</p>
+    ${r.reasons ? `<p class="hint">${escHtml(r.reasons)}</p>` : ''}
+    ${r.author_id ? `<p class="hint">${t('cm.by', { name: profileLink(r.author_id, r.author_name) })}${r.author_banned ? ` · <b>${escHtml(t('adm.banned'))}</b>` : ''}</p>` : ''}
+    <div class="acts">
+      ${r.text != null ? `<button data-act="restore">${escHtml(t('adm.restore'))}</button><button class="danger" data-act="delete">${escHtml(t('adm.delete'))}</button>` : ''}
+      ${r.author_id ? `<button class="secondary" data-act="${r.author_banned ? 'unban' : 'ban'}">${escHtml(t(r.author_banned ? 'adm.unban' : 'adm.ban'))}</button>` : ''}
+    </div></li>`;
+};
+
+async function loadReports() {
+  try {
+    const rows = await api.call('GET', '/api/admin/reports');
+    $('admList').innerHTML = rows.map(reportRow).join('');
+    box('admMsg', rows.length ? '' : t('adm.empty'));
+  } catch (e) { box('admMsg', e.message, true); }
+}
+
+async function showAdmin() {
+  $('admin').hidden = false;
+  document.title = `${t('adm.title')} · ${t('app.title')}`;
+  const ok = store.get(ADMIN_KEY) && await api.call('GET', '/api/admin/check').then(() => true, () => false);
+  if (!ok) store.set(ADMIN_KEY, null);
+  $('admLogin').hidden = ok;
+  $('admBody').hidden = !ok;
+  if (ok) loadReports();
+}
+$('admLogin').onsubmit = async e => {
+  e.preventDefault();
+  store.set(ADMIN_KEY, $('admToken').value.trim());
+  await showAdmin();
+  if ($('admBody').hidden) box('admLoginMsg', t('api.admin'), true);
+};
+$('admLogout').onclick = () => { store.set(ADMIN_KEY, null); showAdmin(); };
+$('admList').onclick = async e => {
+  const b = e.target.closest('button[data-act]');
+  if (!b) return;
+  const { kind, target, author } = b.closest('li').dataset, act = b.dataset.act;
+  if (act === 'delete' && !confirm(t('adm.confirmDelete'))) return;
+  if (act === 'ban' && !confirm(t('adm.confirmBan'))) return;
+  try {
+    if (act === 'restore') await api.call('POST', '/api/admin/restore', { kind, target });
+    if (act === 'delete') await api.call('DELETE', kind === 'score' ? '/api/scores/' + encodeURIComponent(target) : '/api/comments/' + encodeURIComponent(target));
+    if (act === 'ban' || act === 'unban') await api.call('POST', '/api/admin/ban', { device_id: author, banned: act === 'ban' });
+    loadReports();
+  } catch (err) { box('admMsg', err.message, true); }
+};
+
+/* ---------- Init ---------- */
+applyI18n();
+$('lang').value = LANG;
+$('lang').onchange = () => setLang($('lang').value, () => {
+  if (!$('gallery').hidden) { listHeading(); loadList(true); }
+  if (!$('admBody').hidden) { document.title = `${t('adm.title')} · ${t('app.title')}`; loadReports(); }
+});
+params.has('admin') ? showAdmin() : showGallery();
+</script>
+</body>
+</html>

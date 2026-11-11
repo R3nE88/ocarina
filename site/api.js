@@ -1,16 +1,21 @@
 /* Talks to the community API. There are no accounts: each browser keeps a secret device token,
    which can be copied to another browser to keep the same name and sheets. */
-const TOKEN_KEY = 'ocarina-device';
+const TOKEN_KEY = 'ocarina-device', ADMIN_KEY = 'ocarina-admin';
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) {} },
+};
 
 const api = {
-  token() { try { return localStorage.getItem(TOKEN_KEY); } catch (e) { return null; } },
-  setToken(v) { try { v ? localStorage.setItem(TOKEN_KEY, v) : localStorage.removeItem(TOKEN_KEY); } catch (e) {} },
+  token: () => store.get(TOKEN_KEY),
+  setToken: v => store.set(TOKEN_KEY, v),
   me: null,
 
-  async call(method, path, body, extraHeaders) {
-    const headers = { ...extraHeaders };
-    const tok = api.token();
+  async call(method, path, body) {
+    const headers = {};
+    const tok = api.token(), admin = store.get(ADMIN_KEY);
     if (tok) headers.Authorization = 'Bearer ' + tok;
+    if (admin) headers['X-Admin-Token'] = admin; // lets a moderator open hidden sheets too
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     let r;
     try {

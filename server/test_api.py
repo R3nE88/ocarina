@@ -75,6 +75,7 @@ def test_flow(client):
     assert client.get(f"/api/scores/{sid}", headers=bob).status_code == 404
     assert client.get(f"/api/scores/{sid}", headers=alice).status_code == 200  # the author still sees it
     assert "Lullaby" not in titles(sort="new")
+    assert "Lullaby" in titles(author=alice_id, h=alice)  # its author still finds it on their profile
     assert client.get("/api/admin/reports").status_code == 403
     rep = client.get("/api/admin/reports", headers=ADMIN).json()
     assert rep[0]["target"] == sid and rep[0]["reports"] == 3 and rep[0]["hidden"]

@@ -23,6 +23,7 @@
   @font-face { font-family:Almendra; font-weight:700; font-display:swap; src:url(/fonts/almendra-700.woff2) format("woff2"); }
   :root { --green:#2f6b3a; --ink:#222; --line:#d6d2c4; }
   * { box-sizing: border-box; }
+  [hidden] { display:none !important; }
   body { margin:0; font:14px/1.4 system-ui, "Segoe UI", sans-serif; color:var(--ink); background:#e9e5d8; }
   .app { display:grid; grid-template-columns: 370px 1fr; height:100vh; }
   aside { background:#fbfaf5; border-right:1px solid var(--line); padding:16px; overflow:auto; }
@@ -135,7 +136,7 @@
     </div>
     <nav class="nav">
       <a href="/comunidad" data-i18n="nav.community">Comunidad</a>
-      <a href="/comunidad" id="myLink" data-i18n="nav.mine" hidden>Mis partituras</a>
+      <a href="/comunidad?u=me" data-i18n="nav.mine">Mis partituras</a>
       <a class="jump" href="#sheet" data-i18n="jump">Ver la hoja ↓</a>
     </nav>
     <label for="game" data-i18n="game">Versión del juego</label>
@@ -1503,8 +1504,6 @@ $('shareForm').onsubmit = async e => {
                              : (await api.call('POST', '/api/scores', body)).id;
     history.replaceState(null, '', '/s/' + id);
     showCommunity(await api.call('GET', '/api/scores/' + id));
-    $('myLink').hidden = false;
-    $('myLink').href = '/comunidad?u=' + encodeURIComponent(api.me.id);
     $('shLink').value = scoreUrl(id);
     $('shLinkBox').hidden = false;
     $('shGo').textContent = t('share.update');
@@ -1638,11 +1637,6 @@ render();
 
 const sharedId = location.pathname.match(/^\/s\/([\w-]+)$/)?.[1];
 if (sharedId) openShared(sharedId);
-api.loadMe().then(me => {
-  if (!me) return;
-  $('myLink').hidden = false;
-  $('myLink').href = '/comunidad?u=' + encodeURIComponent(me.id);
-});
 </script>
 </body>
 </html>

@@ -154,7 +154,7 @@ class ScoreIn(BaseModel):
 
 
 LIKES = "(SELECT count(*) FROM votes v WHERE v.score_id = s.id)"
-SUMMARY = f"""SELECT s.id, s.title, s.subtitle, s.game, s.listed, s.created_at, d.id AS author_id, d.name AS author_name,
+SUMMARY = f"""SELECT s.id, s.title, s.subtitle, s.game, s.listed, s.hidden, s.created_at, d.id AS author_id, d.name AS author_name,
   {LIKES} AS likes, (SELECT count(*) FROM comments c WHERE c.score_id = s.id AND NOT c.hidden) AS comments
   FROM scores s JOIN devices d ON d.id = s.device_id"""
 ORDER = {
@@ -167,12 +167,12 @@ ORDER = {
 @app.get("/api/scores")
 def list_scores(sort: Literal["trending", "top", "new"] = "trending", search: str = Query("", alias="q"),
                 game: str = "", author: str = "", offset: int = 0, d=Depends(current_device)):
-    where, p = ["NOT s.hidden", "NOT d.banned"], {}
+    where, p = ["NOT d.banned"], {}
     if author:
         where.append("s.device_id = %(author)s")
         p["author"] = author
-    if not (author and d and d["id"] == author):  # your own profile also lists your link-only sheets
-        where.append("s.listed")
+    if not (author and d and d["id"] == author):  # your own profile also lists your link-only and hidden sheets
+        where += ["s.listed", "NOT s.hidden"]
     if search.strip():
         where.append(r"(s.title ILIKE %(q)s OR s.subtitle ILIKE %(q)s)")  # shortcut: sequential scan, add pg_trgm past ~100k sheets
         p["q"] = "%" + re.sub(r"([%_\\])", r"\\\1", search.strip()[:100]) + "%"
