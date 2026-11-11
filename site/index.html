@@ -7,8 +7,8 @@
 <meta name="description" content="Crea hojas de música con los botones de la ocarina de Zelda: Ocarina of Time para Nintendo 64, 3DS y el remake de Switch 2. Escribe las notas o importa MIDI y MusicXML, escúchalas y descárgalas en PNG o PDF.">
 <meta name="author" content="R3nE88">
 <meta name="theme-color" content="#7a1e10">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="canonical" href="https://ocarina.forja-digital.com/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ocarina.forja-digital.com/">
@@ -18,15 +18,17 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="preload" href="fonts/almendra-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/almendra-700.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-  @font-face { font-family:Almendra; font-weight:700; font-display:swap; src:url(fonts/almendra-700.woff2) format("woff2"); }
+  @font-face { font-family:Almendra; font-weight:700; font-display:swap; src:url(/fonts/almendra-700.woff2) format("woff2"); }
   :root { --green:#2f6b3a; --ink:#222; --line:#d6d2c4; }
   * { box-sizing: border-box; }
   body { margin:0; font:14px/1.4 system-ui, "Segoe UI", sans-serif; color:var(--ink); background:#e9e5d8; }
   .app { display:grid; grid-template-columns: 370px 1fr; height:100vh; }
   aside { background:#fbfaf5; border-right:1px solid var(--line); padding:16px; overflow:auto; }
-  aside h1 { font-family:Almendra, Georgia, serif; color:#7a1e10; font-size:22px; margin:0 0 12px; }
+  aside h1 { font-family:Almendra, Georgia, serif; color:#7a1e10; font-size:22px; margin:0; flex:1; }
+  .top { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .top select { width:auto; padding:3px 6px; }
   label { display:block; margin:10px 0 4px; font-weight:600; font-size:13px; }
   input[type=text], select, textarea, input[type=number] { width:100%; padding:6px 8px; border:1px solid #c9c4b3; border-radius:6px; font:inherit; background:#fff; }
   textarea { height:230px; font-family: Consolas, monospace; font-size:13px; resize:vertical; }
@@ -102,79 +104,81 @@
 <body>
 <div class="app">
   <aside>
-    <h1>Partituras de Ocarina</h1>
-    <a class="jump" href="#sheet">Ver la hoja ↓</a>
-    <label>Versión del juego</label>
+    <div class="top">
+      <h1 data-i18n="app.title">Partituras de Ocarina</h1>
+      <select id="lang" aria-label="Idioma / Language"><option value="es">Español</option><option value="en">English</option></select>
+    </div>
+    <a class="jump" href="#sheet" data-i18n="jump">Ver la hoja ↓</a>
+    <label for="game" data-i18n="game">Versión del juego</label>
     <select id="game">
       <option value="n64">Nintendo 64</option>
       <option value="3ds">Nintendo 3DS</option>
       <option value="sw2">Nintendo Switch 2 (remake)</option>
-      <option value="real">Ocarina real (12 agujeros, Alto C)</option>
+      <option value="real" data-i18n="game.real">Ocarina real (12 agujeros, Alto C)</option>
     </select>
-    <label>Título</label>
+    <label for="title" data-i18n="title">Título</label>
     <input type="text" id="title" value="Kakariko Village">
-    <label>Subtítulo</label>
+    <label for="subtitle" data-i18n="subtitle">Subtítulo</label>
     <input type="text" id="subtitle" value="Music by Koji Kondo">
 
-    <label>Notas</label>
+    <label for="src" data-i18n="notes">Notas</label>
     <textarea id="src" spellcheck="false"></textarea>
     <details>
-      <summary>Cómo escribir las notas</summary>
-      <p>Nota + alteración + octava: <code>C4</code> <code>F#4</code> <code>Bb4</code> (Do central = <code>C4</code>).</p>
-      <p>Duración opcional con <code>:</code> → <code>:1</code> redonda, <code>:2</code> blanca, <code>:4</code> negra, <code>:8</code> corchea, <code>:16</code>. Punto: <code>:4.</code> — la duración se mantiene hasta que la cambies.</p>
-      <p>Silencio: <code>r</code> o <code>r:2</code>. Compás: <code>|</code>. Ligadura (nota que se sostiene al siguiente compás): <code>D5:2.~ | D5:2</code>. Cada renglón del texto = un renglón de la hoja. Comentarios con <code>%</code>.</p>
-      <p>Rango: <b>B3 – F5</b> en N64/3DS/Switch 2 y <b>A3 – F5</b> en la ocarina real de 12 agujeros. Si la canción no cabe, se transpone automáticamente.</p>
+      <summary data-i18n="help.summary">Cómo escribir las notas</summary>
+      <p data-i18n-html="help.p1"></p>
+      <p data-i18n-html="help.p2"></p>
+      <p data-i18n-html="help.p3"></p>
+      <p data-i18n-html="help.p4"></p>
     </details>
 
-    <label>…o importar MIDI o MusicXML (.mid, .midi, .musicxml, .xml, .mxl)</label>
+    <label for="file" data-i18n="import">…o importar MIDI o MusicXML (.mid, .midi, .musicxml, .xml, .mxl)</label>
     <input type="file" id="file" accept=".mid,.midi,.musicxml,.xml,.mxl">
     <div id="trackBox" hidden>
-      <label>Pista MIDI a usar como melodía</label>
+      <label for="track" data-i18n="track">Pista MIDI a usar como melodía</label>
       <select id="track"></select>
       <div class="btns">
-        <button id="playMidi">▶ MIDI completo</button>
+        <button id="playMidi" data-i18n="playMidi">▶ MIDI completo</button>
         <span id="midiTime" style="align-self:center;font-variant-numeric:tabular-nums;color:#555"></span>
       </div>
     </div>
 
     <div class="row">
       <div>
-        <label>Transposición</label>
+        <label for="transpose" data-i18n="transpose">Transposición</label>
         <select id="transpose"></select>
       </div>
       <div>
-        <label>Compases/línea</label>
+        <label for="mpl" data-i18n="mpl">Compases/línea</label>
         <select id="mpl">
-          <option value="0">Auto</option>
+          <option value="0" data-i18n="mpl.auto">Auto</option>
           <option>1</option><option>2</option><option>3</option><option>4</option><option>6</option><option>8</option>
         </select>
       </div>
       <div>
-        <label>Tempo</label>
+        <label for="tempo" data-i18n="tempo">Tempo</label>
         <input type="number" id="tempo" value="103" min="30" max="300">
       </div>
     </div>
 
     <div class="checks">
-      <label><input type="checkbox" id="names"> Mostrar nombre de las notas</label>
-      <label><input type="checkbox" id="bars"> Mostrar líneas de compás</label>
-      <label><input type="checkbox" id="ledger"> Líneas adicionales (C4 / B3)</label>
-      <label><input type="checkbox" id="fold" checked> Mover por octava las notas fuera de rango</label>
+      <label><input type="checkbox" id="names"> <span data-i18n="opt.names">Mostrar nombre de las notas</span></label>
+      <label><input type="checkbox" id="bars"> <span data-i18n="opt.bars">Mostrar líneas de compás</span></label>
+      <label><input type="checkbox" id="ledger"> <span data-i18n="opt.ledger">Líneas adicionales (C4 / B3)</span></label>
+      <label><input type="checkbox" id="fold" checked> <span data-i18n="opt.fold">Mover por octava las notas fuera de rango</span></label>
     </div>
 
     <div class="btns">
-      <button id="play">▶ Escuchar</button>
-      <button id="rhythm" title="Las notas caen en pantalla para que las toques en tu consola, sin mover la hoja">Modo ritmo</button>
-      <button id="stop" class="secondary">■ Detener</button>
+      <button id="play" data-i18n="btn.play">▶ Escuchar</button>
+      <button id="rhythm" data-i18n="btn.rhythm" data-i18n-title="btn.rhythm.title">Modo ritmo</button>
+      <button id="stop" class="secondary" data-i18n="btn.stop">■ Detener</button>
       <button id="png" class="secondary">PNG</button>
       <button id="svgBtn" class="secondary">SVG</button>
-      <button id="print" class="secondary">Imprimir / PDF</button>
+      <button id="print" class="secondary" data-i18n="btn.print">Imprimir / PDF</button>
     </div>
     <div id="msg"></div>
     <footer class="fan">
-      Creado por <b>R3nE88</b>.<br>
-      Proyecto hecho por fans, sin afiliación con Nintendo. <i>The Legend of Zelda</i> y <i>Ocarina of Time</i> son marcas de Nintendo.
-      Todo funciona en tu navegador: tus archivos no se suben a ningún servidor.
+      <span data-i18n-html="footer"></span>
+      <span data-i18n="footer.local"></span>
     </footer>
   </aside>
   <main><div id="sheet"></div></main>
@@ -184,21 +188,21 @@
   <div class="rz-bar">
     <h2 id="rzTitle"></h2>
     <span id="rzTime"></span>
-    <label>Tempo
+    <label><span data-i18n="rz.tempo">Tempo</span>
       <select id="rzTempo">
         <option value="50">50%</option><option value="60">60%</option><option value="75">75%</option><option value="90">90%</option>
         <option value="100" selected>100%</option><option value="110">110%</option><option value="125">125%</option>
       </select>
     </label>
-    <label>Caída
+    <label><span data-i18n="rz.fall">Caída</span>
       <select id="rzFall">
-        <option value="5">Lenta</option><option value="3.5" selected>Normal</option><option value="2.4">Rápida</option>
+        <option value="5" data-i18n="rz.slow">Lenta</option><option value="3.5" selected data-i18n="rz.normal">Normal</option><option value="2.4" data-i18n="rz.fast">Rápida</option>
       </select>
     </label>
-    <label><input type="checkbox" id="rzGuide"> Melodía guía</label>
+    <label><input type="checkbox" id="rzGuide"> <span data-i18n="rz.guide">Melodía guía</span></label>
     <button id="rzToggle"></button>
-    <button id="rzRestart" class="secondary">Reiniciar</button>
-    <button id="rzExit" class="secondary">Salir</button>
+    <button id="rzRestart" class="secondary" data-i18n="rz.restart">Reiniciar</button>
+    <button id="rzExit" class="secondary" data-i18n="rz.exit">Salir</button>
   </div>
   <div class="rz-prog"><i id="rzProg"></i></div>
   <div class="rz-stage" id="rzStage">
@@ -215,6 +219,7 @@
   </div>
 </div>
 
+<script src="/i18n.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 
@@ -284,7 +289,7 @@ function parseText(src) {
         events.push({ type: 'rest', beats });
         continue;
       }
-      errors.push(`Renglón ${li + 1}: no entiendo "${tok}"`);
+      errors.push(t('err.token', { line: li + 1, tok }));
     }
     events.push({ type: 'break' });
   });
@@ -294,11 +299,11 @@ function parseText(src) {
 /* ---------- MusicXML import → text ---------- */
 function parseMusicXML(text) {
   const doc = new DOMParser().parseFromString(text, 'application/xml');
-  if (doc.querySelector('parsererror')) throw new Error('El archivo no es un MusicXML válido');
+  if (doc.querySelector('parsererror')) throw new Error(t('err.musicxml'));
   const title = doc.querySelector('work-title')?.textContent || doc.querySelector('movement-title')?.textContent || '';
   const composer = doc.querySelector('creator[type="composer"]')?.textContent || '';
   const part = doc.querySelector('part');
-  if (!part) throw new Error('No encontré ninguna parte en el MusicXML');
+  if (!part) throw new Error(t('err.noPart'));
 
   let divisions = 1, firstVoice = null, last = null;
   const measures = [];
@@ -366,15 +371,15 @@ function parseMidi(buf) {
   const u16 = () => { const v = dv.getUint16(p); p += 2; return v; };
   const vlq = () => { let v = 0, b; do { b = dv.getUint8(p++); v = (v << 7) | (b & 0x7f); } while (b & 0x80); return v; };
 
-  if (str(4) !== 'MThd') throw new Error('El archivo no es un MIDI válido');
+  if (str(4) !== 'MThd') throw new Error(t('err.midi'));
   const hlen = u32(); u16();
   const ntrk = u16(), ppq = u16();
   p += hlen - 6;
-  if (ppq & 0x8000) throw new Error('MIDI con tiempo SMPTE no soportado');
+  if (ppq & 0x8000) throw new Error(t('err.smpte'));
 
   let timeSig = null, keySf = 0, tempo = null;
   const sources = [], tempos = [], drums = [];
-  for (let t = 0; t < ntrk && p + 8 <= dv.byteLength; t++) {
+  for (let tr = 0; tr < ntrk && p + 8 <= dv.byteLength; tr++) {
     const id = str(4), len = u32(), end = Math.min(p + len, dv.byteLength);
     if (id !== 'MTrk') { p = end; continue; }
     let tick = 0, status = 0, name = '';
@@ -416,10 +421,10 @@ function parseMidi(buf) {
     for (const ch of chans) {
       const notes = byChannel[ch].sort((a, b) => a.start - b.start);
       const lo = Math.min(...notes.map(n => n.midi)), hi = Math.max(...notes.map(n => n.midi));
-      const nm = name.trim() || `Pista ${t + 1}`;
+      const nm = name.trim() || t('midi.track', { n: tr + 1 });
       sources.push({
         name: nm, notes,
-        label: `${nm}${chans.length > 1 ? ` · canal ${+ch + 1}` : ''} · ${notes.length} notas · ${noteName(...Object.values(spell(lo)))}–${noteName(...Object.values(spell(hi)))}`,
+        label: `${nm}${chans.length > 1 ? ` · ${t('midi.channel', { n: +ch + 1 })}` : ''} · ${t('midi.notes', { n: notes.length })} · ${noteName(...Object.values(spell(lo)))}–${noteName(...Object.values(spell(hi)))}`,
       });
     }
   }
@@ -594,15 +599,15 @@ function drawRealNote(n, cx, cy, staffTop, diagY, id) {
 }
 
 function realLegend(y) {
-  const labels = { LT: 'P', RT: 'P', L1: '1', L2: '2', L3: '3', L4: '4', R1: '1', R2: '2', R3: '3', R4: '4', SA: 's', SB: 's' };
+  const labels = { LT: t('real.thumb'), RT: t('real.thumb'), L1: '1', L2: '2', L3: '3', L4: '4', R1: '1', R2: '2', R3: '3', R4: '4', SA: 's', SB: 's' };
   const lx = M + 36, scale = 0.52, tx = lx + 270 * scale + 18;
   const line = (i, t) => `<text x="${tx}" y="${y + 16 + i * 17}" font-family="Arial, sans-serif" font-size="12.5" fill="#3b2a20">${t}</text>`;
   return ocarinaDiagram(lx, y, scale, new Set(), labels) +
-    line(0, '<tspan font-weight="700">Ocarina de 12 agujeros (Alto C)</tspan> · ● tapado  ○ destapado') +
-    line(1, 'Mano izquierda (lado ancho): 1 índice · 2 medio · 3 anular · 4 meñique') +
-    line(2, 'Mano derecha (punta): 1 índice · 2 medio · 3 anular · 4 meñique') +
-    line(3, 'P = agujeros de los pulgares (por debajo) · s = subagujeros pequeños') +
-    line(4, 'Suena una octava más aguda de lo escrito.');
+    line(0, `<tspan font-weight="700">${t('real.name')}</tspan> ${t('real.key')}`) +
+    line(1, t('real.left')) +
+    line(2, t('real.right')) +
+    line(3, t('real.thumbs')) +
+    line(4, t('real.octave'));
 }
 
 // Ocarina of Time 3D and the Switch 2 remake: same notes, different buttons.
@@ -651,10 +656,10 @@ const LEGEND_H = 70;
 function gameLegend(y) {
   const face = FACE_STYLE[$('game').value], cy = y + 32, colW = (W - 2 * M - 40) / 4;
   const items = [
-    [{ stick: 2, mod: 0 }, 'Palanca arriba', 'sube un tono'],
-    [{ stick: -2, mod: 0 }, 'Palanca abajo', 'baja un tono'],
-    [{ stick: 0, mod: 1 }, face ? 'Cruceta arriba' : 'Con R', 'sube medio tono'],
-    [{ stick: 0, mod: -1 }, face ? 'Cruceta abajo' : 'Con Z', 'baja medio tono'],
+    [{ stick: 2, mod: 0 }, t('leg.stickUp'), t('leg.wholeUp')],
+    [{ stick: -2, mod: 0 }, t('leg.stickDown'), t('leg.wholeDown')],
+    [{ stick: 0, mod: 1 }, t(face ? 'leg.dpadUp' : 'leg.withR'), t('leg.halfUp')],
+    [{ stick: 0, mod: -1 }, t(face ? 'leg.dpadDown' : 'leg.withZ'), t('leg.halfDown')],
   ];
   return items.map(([c, t1, t2], i) => {
     const x = M + 20 + colW * i + 26;
@@ -742,10 +747,10 @@ function render() {
     if (!n.combo) outOfRange.push(n.name);
   }
 
-  if (notes.length) msgs.push({ text: `${notes.length} notas.` + (shift ? ` Transpuesta ${shift > 0 ? '+' : ''}${shift} semitonos para caber en el rango de la ocarina (${rangeName}).` : '') });
-  if (outOfRange.length) msgs.push({ warn: true, text: `${outOfRange.length} nota(s) fuera del rango de la ocarina (marcadas con ?): ${[...new Set(outOfRange)].join(', ')}. La melodía abarca más de lo que la ocarina puede tocar; prueba otra transposición o ajusta esas notas.` });
+  if (notes.length) msgs.push({ text: t('msg.notes', { n: notes.length }) + (shift ? t('msg.transposed', { shift: (shift > 0 ? '+' : '') + shift, range: rangeName }) : '') });
+  if (outOfRange.length) msgs.push({ warn: true, text: t('msg.outOfRange', { n: outOfRange.length, names: [...new Set(outOfRange)].join(', ') }) });
 
-  if (folded) msgs.push({ text: `${folded} nota(s) movidas de octava para caber en el rango (desmarca la opción para verlas como ?).` });
+  if (folded) msgs.push({ text: t('msg.folded', { n: folded }) });
 
   const title = $('title').value.trim(), subtitle = $('subtitle').value.trim();
   const legendH = real ? 104 : LEGEND_H;
@@ -806,7 +811,7 @@ function render() {
   }
   const total = pages.length;
   $('sheet').innerHTML = pages.map((p, i) => sheetPage(p.join(''), i, total, { title, subtitle, real, headerH, legendH })).join('');
-  if (total > 1) msgs.push({ text: `${total} páginas tamaño carta.` });
+  if (total > 1) msgs.push({ text: t('msg.pages', { n: total }) });
   $('msg').innerHTML = msgs.map(m => `<div class="${m.warn ? 'warn' : ''}">${esc(m.text)}</div>`).join('');
 }
 
@@ -1099,7 +1104,7 @@ function rzDraw() {
   rz.lanes.forEach((el, i) => el.classList.toggle('on', active.has(i)));
 
   const bps = rzBps();
-  const cue = rz.state !== 'run' || beat >= 0 ? '' : beat >= -4 ? Math.ceil(-beat) : 'Prepárate';
+  const cue = rz.state !== 'run' || beat >= 0 ? '' : beat >= -4 ? Math.ceil(-beat) : t('rz.ready');
   $('rzCount').textContent = cue;
   $('rzCount').setAttribute('font-size', typeof cue === 'number' ? rz.cueSize : rz.cueSize * 0.4);
   $('rzTime').textContent = `${fmtTime(Math.max(0, beat) / bps)} / ${fmtTime(total / bps)}`;
@@ -1146,15 +1151,12 @@ function rzSetState(state) {
     rzAllowSleep();
   }
   const text = {
-    idle: [$('title').value.trim() || 'Modo ritmo',
-           rz.real ? 'Toma tu ocarina. Cada digitación baja hasta la línea: toca esa nota cuando llegue y sostenla mientras dure su barra.'
-                   : 'Prepara tu consola con la ocarina en mano. Cada botón baja por su carril: tócalo cuando llegue a la línea y mantenlo mientras dure su barra.',
-           'Comenzar'],
-    paused: ['En pausa', 'Al continuar, la canción retrocede 4 tiempos para que retomes el ritmo.', 'Continuar'],
-    done: ['¡Canción terminada!', 'Si quieres practicarla más despacio, baja el tempo arriba.', 'Otra vez'],
+    idle: [$('title').value.trim() || t('rz.title'), t(rz.real ? 'rz.idle.real' : 'rz.idle.game'), t('rz.start')],
+    paused: [t('rz.paused'), t('rz.pausedText'), t('rz.continue')],
+    done: [t('rz.done'), t('rz.doneText'), t('rz.again')],
   }[state];
   $('rzPanel').hidden = running;
-  $('rzToggle').textContent = running ? 'Pausa' : text[2];
+  $('rzToggle').textContent = running ? t('rz.pause') : text[2];
   if (text) [$('rzPanelTitle').textContent, $('rzPanelText').textContent, $('rzGo').textContent] = text;
 }
 
@@ -1179,11 +1181,11 @@ function rzOpen() {
   rz.real = $('game').value === 'real';
   rz.chart = rzChart();
   if (!rz.chart.notes.length) {
-    $('msg').insertAdjacentHTML('beforeend', '<div class="warn">Escribe o importa una melodía para usar el modo ritmo.</div>');
+    $('msg').insertAdjacentHTML('beforeend', `<div class="warn">${esc(t('rz.empty'))}</div>`);
     return;
   }
   stop();
-  $('rzTitle').textContent = $('title').value.trim() || 'Modo ritmo';
+  $('rzTitle').textContent = $('title').value.trim() || t('rz.title');
   document.documentElement.classList.add('rz-open');
   document.querySelector('.app').inert = true;
   $('rz').hidden = false;
@@ -1231,7 +1233,7 @@ const fileBase = () => ($('title').value.trim() || 'ocarina').replace(/[^\w\-]+/
 let fontCss = null;
 async function embeddedFontCss() {
   if (!fontCss) {
-    const bytes = new Uint8Array(await fetch('fonts/almendra-700.woff2').then(r => r.arrayBuffer()));
+    const bytes = new Uint8Array(await fetch('/fonts/almendra-700.woff2').then(r => r.arrayBuffer()));
     let bin = '';
     for (const b of bytes) bin += String.fromCharCode(b);
     fontCss = `@font-face{font-family:Almendra;font-weight:700;src:url(data:font/woff2;base64,${btoa(bin)}) format("woff2")}`;
@@ -1270,7 +1272,7 @@ const pngBlob = str => new Promise((resolve, reject) => {
 async function savePages(blobs, ext) {
   if (blobs.length === 1) return download(blobs[0], `${fileBase()}.${ext}`);
   const zip = new (await loadJSZip())();
-  blobs.forEach((b, i) => zip.file(`${fileBase()}_pagina${i + 1}.${ext}`, b));
+  blobs.forEach((b, i) => zip.file(`${fileBase()}_${t('export.page')}${i + 1}.${ext}`, b));
   download(await zip.generateAsync({ type: 'blob' }), `${fileBase()}_${ext}.zip`);
 }
 async function exportPages(ext) {
@@ -1278,7 +1280,7 @@ async function exportPages(ext) {
     const strs = await svgStrings();
     await savePages(ext === 'png' ? await Promise.all(strs.map(pngBlob)) : strs.map(s => new Blob([s], { type: 'image/svg+xml' })), ext);
   } catch (err) {
-    $('msg').insertAdjacentHTML('beforeend', `<div class="warn">No se pudo exportar: ${esc(err.message || 'error desconocido')}</div>`);
+    $('msg').insertAdjacentHTML('beforeend', `<div class="warn">${esc(t('export.fail', { err: err.message || t('export.unknown') }))}</div>`);
   }
 }
 
@@ -1292,9 +1294,9 @@ $('stop').onclick = stop;
 let jszipPromise = null;
 const loadJSZip = () => jszipPromise ||= new Promise((resolve, reject) => {
   const s = document.createElement('script');
-  s.src = 'vendor/jszip-3.10.1.min.js';
+  s.src = '/vendor/jszip-3.10.1.min.js';
   s.onload = () => resolve(window.JSZip);
-  s.onerror = () => { jszipPromise = null; reject(new Error('No se pudo cargar el lector de archivos .mxl')); };
+  s.onerror = () => { jszipPromise = null; reject(new Error(t('err.mxl'))); };
   document.head.appendChild(s);
 });
 
@@ -1313,7 +1315,7 @@ $('file').onchange = async e => {
   try {
     if (/\.midi?$/i.test(f.name)) {
       midiData = parseMidi(await f.arrayBuffer());
-      if (!midiData.sources.length) throw new Error('El MIDI no tiene notas');
+      if (!midiData.sources.length) throw new Error(t('err.midiEmpty'));
       $('track').innerHTML = midiData.sources.map((s, i) => `<option value="${i}">${esc(s.label)}</option>`).join('');
       $('track').value = pickMelody(midiData.sources);
       $('trackBox').hidden = false;
@@ -1353,7 +1355,7 @@ $('file').onchange = async e => {
 
 /* ---------- Init ---------- */
 const tsel = $('transpose');
-tsel.innerHTML = '<option value="auto">Automática</option>' +
+tsel.innerHTML = '<option value="auto" data-i18n="transpose.auto"></option>' +
   Array.from({ length: 49 }, (_, i) => i - 24).map(v => `<option value="${v}">${v > 0 ? '+' : ''}${v} st${v % 12 === 0 && v ? ` (${v / 12 > 0 ? '+' : ''}${v / 12} oct)` : ''}</option>`).join('');
 
 $('src').value = `% Kakariko Village — 3/4, tempo 103
@@ -1368,6 +1370,14 @@ G4:4 | G4:2. | F#4:2 A4:4 | G4:2 D4:4 | D5:2.
 
 try { $('game').value = localStorage.getItem('ocarina-game') || 'n64'; } catch (e) {}
 $('game').addEventListener('change', () => { try { localStorage.setItem('ocarina-game', $('game').value); } catch (e) {} });
+
+applyI18n();
+document.title = t('meta.title');
+$('lang').value = LANG;
+$('lang').onchange = () => setLang($('lang').value, () => {
+  document.title = t('meta.title');
+  render();
+});
 
 let timer;
 for (const id of ['src', 'title', 'subtitle']) $(id).addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(render, 150); });
