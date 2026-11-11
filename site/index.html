@@ -63,7 +63,7 @@
   button.link { background:none; color:var(--green); padding:0; font-weight:600; text-decoration:underline; }
   button:disabled { opacity:.6; cursor:default; }
   .cbox { margin-top:16px; padding-top:12px; border-top:1px solid var(--line); }
-  .cbox h3 { font-family:Almendra, Georgia, serif; color:#7a1e10; font-size:17px; margin:16px 0 6px; }
+  .cbox h2 { font-family:Almendra, Georgia, serif; color:#7a1e10; font-size:17px; margin:16px 0 6px; }
   .cbox .btns { align-items:center; }
   .badge { display:inline-block; margin-left:6px; padding:1px 7px; border-radius:10px; font-size:11.5px; background:#fdecea; color:#8a1c1c; }
   .like { background:#fff; color:#8e2b1b; border:2px solid #8e2b1b; padding:5px 12px; }
@@ -77,7 +77,7 @@
   #cForm textarea { height:auto; font:inherit; margin-top:8px; }
   dialog.dlg { width:min(420px, calc(100% - 32px)); padding:18px 20px; background:#fbfaf5; border:3px solid #8e2b1b; border-radius:6px; box-shadow:0 4px 18px rgba(0,0,0,.25); color:var(--ink); }
   dialog.dlg::backdrop { background:rgba(40,25,10,.35); }
-  dialog.dlg h3 { margin:0 0 8px; font-family:Almendra, Georgia, serif; color:#7a1e10; font-size:24px; }
+  dialog.dlg h2 { margin:0 0 8px; font-family:Almendra, Georgia, serif; color:#7a1e10; font-size:24px; }
   dialog .inline { display:flex; gap:6px; align-items:center; font-weight:400; }
   dialog textarea { height:auto; font:inherit; }
   .hint { font-size:12.5px; color:#6b6556; margin:8px 0; }
@@ -215,7 +215,7 @@
         <button id="cReport" class="link" data-i18n="c.report">Reportar</button>
       </div>
       <div id="cMsg"></div>
-      <h3 data-i18n="c.comments">Comentarios</h3>
+      <h2 data-i18n="c.comments">Comentarios</h2>
       <ol id="cList" class="comments"></ol>
       <form id="cForm">
         <textarea id="cBody" rows="3" maxlength="1000" required data-i18n-placeholder="c.placeholder" data-i18n-label="c.comments"></textarea>
@@ -267,7 +267,7 @@
 
 <dialog id="shareDlg" class="dlg" aria-labelledby="shTitle">
   <form id="shareForm">
-    <h3 id="shTitle" data-i18n="share.title">Compartir partitura</h3>
+    <h2 id="shTitle" data-i18n="share.title">Compartir partitura</h2>
     <label for="shName" data-i18n="share.name">Tu nombre en la comunidad</label>
     <input type="text" id="shName" maxlength="40">
     <label class="inline"><input type="checkbox" id="shListed" checked> <span data-i18n="share.listed">Mostrar en la galería de la comunidad</span></label>
@@ -283,7 +283,7 @@
 
 <dialog id="reportDlg" class="dlg" aria-labelledby="rpTitle">
   <form id="reportForm">
-    <h3 id="rpTitle" data-i18n="report.title">Reportar</h3>
+    <h2 id="rpTitle" data-i18n="report.title">Reportar</h2>
     <p class="hint" data-i18n="report.hint"></p>
     <label for="rpReason" data-i18n="report.reason">Motivo (opcional)</label>
     <textarea id="rpReason" rows="3" maxlength="300"></textarea>
