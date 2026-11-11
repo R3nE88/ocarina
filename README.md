@@ -3,6 +3,8 @@
 Generador de hojas de música con los botones de la ocarina de *Ocarina of Time* (N64, 3DS y el remake de Switch 2).
 Todo corre en el navegador: no hay backend.
 
+La hoja se arma en páginas tamaño carta: así se ve, se imprime y se exporta. Si tiene varias páginas, PNG y SVG se descargan juntos en un `.zip`.
+
 El **modo ritmo** muestra la canción con notas que caen hasta una línea, para tocarla en tu consola con el tiempo correcto y sin mover la hoja. La página no se conecta con la consola: es solo una guía visual.
 
 ## Estructura

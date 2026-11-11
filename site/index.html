@@ -43,9 +43,13 @@
   details summary { cursor:pointer; font-weight:600; }
   details code { background:#fff; padding:0 3px; border-radius:3px; }
   main { overflow:auto; padding:24px; display:flex; justify-content:center; align-items:flex-start; }
-  #sheet svg { box-shadow:0 4px 18px rgba(0,0,0,.18); background:#f4e9a6; max-width:100%; height:auto; }
-  .note { transition: transform .08s; transform-box: fill-box; transform-origin: center; }
+  #sheet { display:flex; flex-direction:column; gap:28px; width:100%; max-width:920px; }
+  #sheet svg { display:block; box-shadow:0 2px 4px rgba(60,40,10,.12), 0 8px 24px rgba(60,40,10,.16); background:#f4e9a6; width:100%; height:auto; }
+  .note { transition: transform .08s, opacity .25s; transform-box: fill-box; transform-origin: center; }
   .note.playing { transform: scale(1.35); }
+  .note.done { opacity:.4; }
+  .cur { fill:#e07a1c; opacity:0; transition: opacity .12s; }
+  .cur.playing { opacity:.22; }
   .note.real.playing { transform: none; }
   .note.real.playing .nh { fill: #d8431f; stroke: #d8431f; }
   .note.real.playing .ocb { stroke: #d8431f; stroke-width: 9; }
@@ -80,11 +84,18 @@
     button { padding:10px 14px; }
     .jump { display:inline-block; margin-bottom:4px; color:var(--green); font-weight:600; }
   }
+  @page { size: letter; margin: 0; }
   @media print {
-    aside { display:none; }
+    body { background:none; }
+    aside, .rz { display:none !important; }
     .app { display:block; height:auto; }
-    main { padding:0; }
-    #sheet svg { box-shadow:none; width:100%; }
+    main { display:block; padding:0; overflow:visible; }
+    #sheet { display:block; max-width:none; }
+    /* each page is drawn at letter proportions, so it fills one sheet */
+    #sheet svg { box-shadow:none; width:8.5in; height:auto; break-after:page; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+    #sheet svg:last-child { break-after:auto; }
+    .cur { display:none; }
+    .note.done { opacity:1; }
   }
 </style>
 </head>
@@ -476,6 +487,7 @@ function computeShift(notes, setting) {
 /* ---------- Layout & drawing ---------- */
 const W = 760, M = 22, S = 13, R = 12.5;  // S = half staff space
 const CONTENT_L = M + 92, CONTENT_R = W - M - 20;
+const PAGE_H = Math.floor(W * 11 / 8.5); // US letter (8.5 × 11 in); rounded down so print never spills onto a blank page
 // treble clef outline from Noto Music (font units, em = 1000, y up) — see tools/extract_clef.py
 const CLEF_PATH = 'M314 801Q300 854 291.0 906.0Q282 958 282 1012Q282 1059 288.5 1100.5Q295 1142 307 1177Q320 1217 341.0 1252.5Q362 1288 385.5 1311.0Q409 1334 427 1334Q451 1334 493 1249Q514 1206 524.0 1156.0Q534 1106 534 1049Q534 978 515.0 907.5Q496 837 459.5 775.0Q423 713 372 666L407 498Q422 500 432.0 501.0Q442 502 447 502Q508 502 556.0 467.5Q604 433 632.5 377.0Q661 321 661 254Q661 177 621.5 115.5Q582 54 503 25Q508 8 532 -117Q538 -147 541.0 -164.5Q544 -182 545.0 -195.0Q546 -208 546 -225Q546 -275 521.5 -314.5Q497 -354 455.5 -376.0Q414 -398 363 -398Q311 -398 271.0 -378.5Q231 -359 208.0 -324.5Q185 -290 185 -245Q185 -197 211.5 -165.0Q238 -133 287 -133Q329 -133 355.5 -163.5Q382 -194 382 -236Q382 -272 357.0 -299.0Q332 -326 292 -326H282Q308 -365 364 -365Q433 -365 472.0 -320.0Q511 -275 511 -205Q511 -188 507.0 -159.5Q503 -131 493 -91Q483 -51 477.5 -25.0Q472 1 470 12Q436 2 390 2Q304 2 222 52Q142 102 96.0 184.0Q50 266 50 361Q50 451 91 530Q132 609 192.5 675.0Q253 741 314 801ZM341 826Q364 838 390.0 870.5Q416 903 440.0 945.0Q464 987 479.0 1029.5Q494 1072 494 1106Q494 1142 483.0 1163.0Q472 1184 445 1184Q421 1184 398.5 1162.0Q376 1140 358.5 1103.5Q341 1067 331.0 1022.0Q321 977 321 930Q321 898 327.5 872.0Q334 846 341 826ZM398 379Q371 373 347.0 353.5Q323 334 308.5 306.5Q294 279 294 248Q294 223 307.0 196.5Q320 170 339 154Q352 142 365 136Q380 129 380 123Q380 120 370 117Q332 126 301.5 151.0Q271 176 253.5 211.5Q236 247 236 287Q236 330 253.5 370.0Q271 410 302.5 442.0Q334 474 374 490L345 641Q229 547 174.5 456.5Q120 366 120 277Q120 212 154.0 156.0Q188 100 247.0 65.5Q306 31 380 31Q400 31 420.5 35.0Q441 39 464 45ZM495 55Q593 97 593 227Q593 270 571.0 305.5Q549 341 512.0 362.0Q475 383 429 383Z';
 const CLEF_SCALE = 7.4 * S / 1000;
@@ -609,11 +621,46 @@ function drawFaceButton(button, cx, cy, st) {
          `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-family="'Arial Black', Arial, sans-serif" font-weight="900" font-size="14" fill="${st.text}">${label}</text>`;
 }
 
-// small D-pad with the up (sharp) or down (flat) arm highlighted
-function dpadBadge(cx, cy, up) {
-  const x = up ? cx + R + 7 : cx - R - 9, y = up ? cy - R - 3 : cy + 9, a = 3, L = 8.5;
+// D-pad centered on (x, y) with the up (sharp) or down (flat) arm highlighted
+function dpad(x, y, up, a = 3.3, L = 9) {
   return `<path d="M${x - a},${y - L} h${2 * a} v${L - a} h${L - a} v${2 * a} h${a - L} v${L - a} h${-2 * a} v${a - L} h${a - L} v${-2 * a} h${L - a}Z" fill="#3d3d3d"/>` +
          `<rect x="${x - a}" y="${up ? y - L : y + a}" width="${2 * a}" height="${L - a}" fill="#e8552b"/>`;
+}
+const dpadBadge = (cx, cy, up) => dpad(up ? cx + R + 7 : cx - R - 9, up ? cy - R - 3 : cy + 9, up);
+
+// Rhythm mode: stick and R/Z/D-pad go in chips beside the button, because the note's tail covers what is above it
+const CHIP_W = 16, CHIP_H = 24, CHIP_GAP = 5, CHIPS_W = 2 * (R + CHIP_GAP + CHIP_W);
+function comboChips(c, ds) {
+  const chip = x => `<rect x="${x}" y="${-CHIP_H / 2}" width="${CHIP_W}" height="${CHIP_H}" rx="5" fill="#fff" stroke="#111" stroke-width="1.6"/>`;
+  let s = '';
+  if (c.stick) {
+    const x = -R - CHIP_GAP - CHIP_W, ax = x + CHIP_W / 2, k = c.stick > 0 ? 1 : -1;
+    s += chip(x) + `<line x1="${ax}" x2="${ax}" y1="${8 * k}" y2="${-1 * k}" stroke="#111" stroke-width="3" stroke-linecap="round"/>` +
+         `<path d="M${ax},${-9 * k} L${ax - 5.5},${-1 * k} L${ax + 5.5},${-1 * k}Z" fill="#111" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/>`;
+  }
+  if (c.mod) {
+    const x = R + CHIP_GAP;
+    s += chip(x) + (ds ? dpad(x + CHIP_W / 2, 0, c.mod > 0, 2.6, 7.2)
+                       : `<text x="${x + CHIP_W / 2}" y="5.5" text-anchor="middle" font-family="Arial" font-weight="700" font-size="15" fill="#111">${c.mod > 0 ? 'R' : 'Z'}</text>`);
+  }
+  return s;
+}
+
+// key to the stick and half-step marks, drawn under the title
+const LEGEND_H = 70;
+function gameLegend(y) {
+  const face = FACE_STYLE[$('game').value], cy = y + 32, colW = (W - 2 * M - 40) / 4;
+  const items = [
+    [{ stick: 2, mod: 0 }, 'Palanca arriba', 'sube un tono'],
+    [{ stick: -2, mod: 0 }, 'Palanca abajo', 'baja un tono'],
+    [{ stick: 0, mod: 1 }, face ? 'Cruceta arriba' : 'Con R', 'sube medio tono'],
+    [{ stick: 0, mod: -1 }, face ? 'Cruceta abajo' : 'Con Z', 'baja medio tono'],
+  ];
+  return items.map(([c, t1, t2], i) => {
+    const x = M + 20 + colW * i + 26;
+    return drawButton({ combo: { button: 'Cu', ...c } }, x, cy, '', {}) +
+      `<text x="${x + 30}" y="${cy - 2}" font-family="Arial, sans-serif" font-size="12.5" fill="#3b2a20"><tspan font-weight="700">${t1}</tspan><tspan x="${x + 30}" dy="15">${t2}</tspan></text>`;
+  }).join('');
 }
 
 function drawButton(n, cx, cy, id, opts) {
@@ -643,6 +690,7 @@ function drawButton(n, cx, cy, id, opts) {
     s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#gC)" stroke="#7a5700" stroke-width="1.6"/>` +
          `<path d="${t}" fill="#ffe96a" stroke="#4a3500" stroke-width="1.7" stroke-linejoin="round"/>`;
   }
+  if (opts.chips) return s + comboChips(c, ds) + '</g>';
   if (c.stick > 0) {
     s += `<line x1="${cx}" x2="${cx}" y1="${cy - R - 1}" y2="${cy - R - 11}" stroke="#111" stroke-width="2.2"/>` +
          `<path d="M${cx},${cy - R - 19} L${cx - 5.5},${cy - R - 10} L${cx + 5.5},${cy - R - 10}Z" fill="#111"/>`;
@@ -700,12 +748,14 @@ function render() {
   if (folded) msgs.push({ text: `${folded} nota(s) movidas de octava para caber en el rango (desmarca la opción para verlas como ?).` });
 
   const title = $('title').value.trim(), subtitle = $('subtitle').value.trim();
-  const legendH = real ? 104 : 0;
+  const legendH = real ? 104 : LEGEND_H;
   const headerH = (title || subtitle ? M + 96 : M + 20) + legendH;
-  let body = '', y = headerH, idx = 0;
+  const blocks = []; // one per staff line, drawn from y = 0
+  let idx = 0;
   playList = [];
 
   for (const line of buildLines(events, opts)) {
+    let body = '';
     let top = -S, bot = 9 * S;
     for (const it of line) {
       const n = it.ev;
@@ -718,7 +768,7 @@ function render() {
     const diagTop = bot + 6; // fingering diagrams go under the staff
     if (real) bot += DIAG_H + 12;
     if (opts.names) bot += 20;
-    const staffTop = y - top + 4;
+    const staffTop = -top + 4;
 
     for (let k = 0; k < 5; k++) {
       const ly = staffTop + k * 2 * S;
@@ -737,16 +787,41 @@ function render() {
       }
       const n = it.ev;
       if (n.type === 'rest') { playList.push({ beats: n.beats }); return; }
-      const cx = CONTENT_L + it.x + 20, cy = staffTop + (38 - n.d) * S, id = 'n' + idx++;
+      const cx = CONTENT_L + it.x + 20, cy = staffTop + (38 - n.d) * S, id = 'n' + idx++, cw = real ? OC_W + 8 : 2 * R + 20;
+      body += `<rect class="cur" id="${id}c" x="${cx - cw / 2}" y="${staffTop + top - 2}" width="${cw}" height="${bot - top + 2}" rx="6"/>`; // playback cursor
       body += real && n.combo ? drawRealNote(n, cx, cy, staffTop, staffTop + diagTop, id) : drawButton(n, cx, cy, id, opts);
       if (opts.names) body += `<text x="${cx}" y="${staffTop + bot - 4}" text-anchor="middle" font-family="Arial" font-size="11" fill="#6b4a3a">${n.name}</text>`;
       playList.push({ midi: n.combo ? n.pm + (real ? 12 : 0) : null, beats: n.beats, id, n }); // real alto C sounds an octave up
     });
-    y = staffTop + bot + 14;
+    blocks.push({ body, h: staffTop + bot + 14 });
   }
 
-  const H = Math.max(y + M, headerH + 120);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  // US-letter pages: the screen shows exactly what PNG, SVG and print/PDF produce
+  const pages = [[]], contTop = M + 46, pageBottom = PAGE_H - M - 26;
+  let y = headerH;
+  for (const b of blocks) {
+    if (y + b.h > pageBottom && pages.at(-1).length) { pages.push([]); y = contTop; }
+    pages.at(-1).push(`<g transform="translate(0 ${y})">${b.body}</g>`);
+    y += b.h;
+  }
+  const total = pages.length;
+  $('sheet').innerHTML = pages.map((p, i) => sheetPage(p.join(''), i, total, { title, subtitle, real, headerH, legendH })).join('');
+  if (total > 1) msgs.push({ text: `${total} páginas tamaño carta.` });
+  $('msg').innerHTML = msgs.map(m => `<div class="${m.warn ? 'warn' : ''}">${esc(m.text)}</div>`).join('');
+}
+
+function sheetPage(body, i, total, { title, subtitle, real, headerH, legendH }) {
+  const H = PAGE_H;
+  let head;
+  if (i === 0) {
+    head = (title ? `<text x="${W / 2}" y="${M + 48}" text-anchor="middle" font-family="Almendra, Georgia, serif" font-weight="700" font-size="38" fill="#7a1e10">${esc(title)}</text>` : '') +
+      (subtitle ? `<text x="${W / 2}" y="${M + 70}" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="13" fill="#b5560c" letter-spacing=".5">${esc(subtitle.toUpperCase())}</text>` : '') +
+      (real ? realLegend(headerH - legendH + 4) : gameLegend(headerH - legendH));
+  } else { // running header on the following pages
+    head = `<text x="${W / 2}" y="${M + 26}" text-anchor="middle" font-family="Almendra, Georgia, serif" font-weight="700" font-size="20" fill="#7a1e10">${esc(title)}</text>`;
+  }
+  const folio = total > 1 ? `<text x="${W / 2}" y="${H - M - 6}" text-anchor="middle" font-family="Arial, sans-serif" font-size="11.5" fill="#7a5a4a">${i + 1} / ${total}</text>` : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
     <defs>
       <path id="clef" d="${CLEF_PATH}" fill="#2b1a12"/>
       <radialGradient id="gA" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#7d97ff"/><stop offset="1" stop-color="#1c3cc4"/></radialGradient>
@@ -756,13 +831,10 @@ function render() {
     </defs>
     <rect x="0" y="0" width="${W}" height="${H}" fill="#f4e9a6"/>
     <rect x="${M / 2}" y="${M / 2}" width="${W - M}" height="${H - M}" fill="none" stroke="#8e2b1b" stroke-width="4"/>
-    ${title ? `<text x="${W / 2}" y="${M + 48}" text-anchor="middle" font-family="Almendra, Georgia, serif" font-weight="700" font-size="38" fill="#7a1e10">${esc(title)}</text>` : ''}
-    ${subtitle ? `<text x="${W / 2}" y="${M + 70}" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="13" fill="#e07a1c" letter-spacing=".5">${esc(subtitle.toUpperCase())}</text>` : ''}
-    ${real ? realLegend(headerH - legendH + 4) : ''}
+    ${head}
     ${body}
+    ${folio}
   </svg>`;
-  $('sheet').innerHTML = svg;
-  $('msg').innerHTML = msgs.map(m => `<div class="${m.warn ? 'warn' : ''}">${esc(m.text)}</div>`).join('');
 }
 
 /* ---------- Playback ---------- */
@@ -772,7 +844,21 @@ function stop() {
   clearInterval(midiTimer); midiTimer = null;
   if (midiOut) { midiOut.disconnect(); midiOut = null; }
   voices.forEach(o => { try { o.stop(); } catch (e) {} }); voices = [];
-  document.querySelectorAll('.note.playing').forEach(e => e.classList.remove('playing'));
+  document.querySelectorAll('.playing, .done').forEach(e => e.classList.remove('playing', 'done'));
+}
+// sheet playback: the current note gets a cursor band, played notes fade, and the view follows the song
+function markPlaying(id) {
+  document.querySelectorAll('#sheet .playing').forEach(e => { e.classList.remove('playing'); e.classList.add('done'); });
+  const note = id && $(id);
+  if (!note) return;
+  note.classList.add('playing');
+  const cur = $(id + 'c');
+  cur.classList.add('playing');
+  const r = cur.getBoundingClientRect(), box = document.querySelector('main').getBoundingClientRect();
+  const top = Math.max(0, box.top), bottom = Math.min(innerHeight, box.bottom);
+  if (r.top < top + 40 || r.bottom > bottom - 40) {
+    cur.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }
 }
 function ocarinaVoice(midi, t, dur) {
   const f = 440 * Math.pow(2, (midi - 69) / 12);
@@ -798,16 +884,11 @@ function play() {
   let t = t0;
   for (const p of playList) {
     const dur = p.beats * spb;
-    if (p.id) {
-      timers.push(setTimeout(() => {
-        document.querySelectorAll('.note.playing').forEach(e => e.classList.remove('playing'));
-        document.getElementById(p.id)?.classList.add('playing');
-      }, (t - t0 + 0.1) * 1000));
-    }
+    if (p.id) timers.push(setTimeout(() => markPlaying(p.id), (t - t0 + 0.1) * 1000));
     if (p.midi != null) ocarinaVoice(p.midi, t, dur);
     t += dur;
   }
-  timers.push(setTimeout(() => document.querySelectorAll('.note.playing').forEach(e => e.classList.remove('playing')), (t - t0 + 0.2) * 1000));
+  timers.push(setTimeout(stop, (t - t0 + 0.6) * 1000));
 }
 
 /* ---------- Full MIDI playback (all tracks) ---------- */
@@ -931,7 +1012,7 @@ function rzHead(n) {
     return `<g class="note real">${ocarinaDiagram(-135, -91, 1, new Set(n.combo.holes.split(' ')))}` +
            `<text x="150" y="-12" font-family="Arial, sans-serif" font-weight="700" font-size="36" fill="#7a1e10">${n.name}</text></g>`;
   }
-  const button = drawButton(n, 0, 0, '', { ledger: false });
+  const button = drawButton(n, 0, 0, '', { ledger: false, chips: true });
   return rz.real ? `<g transform="scale(2.4)">${button}</g>` : button;
 }
 
@@ -939,9 +1020,9 @@ function rzLayout() {
   const { width: W, height: H } = $('rzStage').getBoundingClientRect();
   if (!W || !H) return;
   const count = rz.real ? 1 : BUTTONS.length;
-  const trackW = Math.min(W, rz.real ? 460 : 660), x0 = (W - trackW) / 2, laneW = trackW / count;
-  const s = rz.real ? Math.min(0.62, H / 800) : Math.min(2.1, laneW / 58, H / 200);
-  const hitY = H - (rz.real ? 100 : 44) * s - 6; // leaves room for a stick arrow on a note enlarged at the line
+  const trackW = Math.min(W, rz.real ? 460 : 760), x0 = (W - trackW) / 2, laneW = trackW / count;
+  const s = rz.real ? Math.min(0.62, H / 800) : Math.min(2, laneW / (CHIPS_W + 3), H / 220);
+  const hitY = H - (rz.real ? 100 : 30) * s - 8; // leaves room for a note enlarged at the line
   const visible = +$('rzFall').value * rzBaseBpm() / 60 * (rz.real ? 0.7 : 1); // fingering diagrams are tall, so they need more spacing
   const laneX = i => x0 + laneW * (i + 0.5);
   Object.assign(rz, { H, s, hitY, visible, laneX, x0, trackW, ppb: hitY / visible, tailW: rz.real ? 34 : 13 * s, cueSize: Math.min(W, H) * 0.24 });
@@ -1157,29 +1238,52 @@ async function embeddedFontCss() {
   }
   return fontCss;
 }
-async function svgString() {
+async function svgStrings() { // one per letter page
   stop();
-  const svg = $('sheet').querySelector('svg').cloneNode(true);
-  try {
-    const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-    style.textContent = await embeddedFontCss();
-    svg.insertBefore(style, svg.firstChild);
-  } catch (e) { /* export still works with a fallback font */ }
-  return new XMLSerializer().serializeToString(svg);
+  let css = '';
+  try { css = await embeddedFontCss(); } catch (e) { /* export still works with a fallback font */ }
+  return [...$('sheet').querySelectorAll('svg')].map(page => {
+    const svg = page.cloneNode(true);
+    svg.querySelectorAll('.cur').forEach(c => c.remove());
+    if (css) {
+      const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+      style.textContent = css;
+      svg.insertBefore(style, svg.firstChild);
+    }
+    return new XMLSerializer().serializeToString(svg);
+  });
 }
 
-$('svgBtn').onclick = async () => download(new Blob([await svgString()], { type: 'image/svg+xml' }), fileBase() + '.svg');
-$('png').onclick = async () => {
-  const svg = $('sheet').querySelector('svg'), scale = 2;
-  const img = new Image();
+const pngBlob = str => new Promise((resolve, reject) => {
+  const img = new Image(), scale = 3; // 2280 × 2949 px: 268 dpi on letter paper
   img.onload = () => setTimeout(() => { // give the embedded font a moment to decode
     const cv = document.createElement('canvas');
-    cv.width = svg.width.baseVal.value * scale; cv.height = svg.height.baseVal.value * scale;
+    cv.width = W * scale; cv.height = PAGE_H * scale;
     cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
-    cv.toBlob(b => download(b, fileBase() + '.png'));
+    cv.toBlob(resolve);
   }, 150);
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(await svgString());
-};
+  img.onerror = reject;
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(str);
+});
+
+// a single page downloads as is; several pages go in one .zip so the browser doesn't block the extra downloads
+async function savePages(blobs, ext) {
+  if (blobs.length === 1) return download(blobs[0], `${fileBase()}.${ext}`);
+  const zip = new (await loadJSZip())();
+  blobs.forEach((b, i) => zip.file(`${fileBase()}_pagina${i + 1}.${ext}`, b));
+  download(await zip.generateAsync({ type: 'blob' }), `${fileBase()}_${ext}.zip`);
+}
+async function exportPages(ext) {
+  try {
+    const strs = await svgStrings();
+    await savePages(ext === 'png' ? await Promise.all(strs.map(pngBlob)) : strs.map(s => new Blob([s], { type: 'image/svg+xml' })), ext);
+  } catch (err) {
+    $('msg').insertAdjacentHTML('beforeend', `<div class="warn">No se pudo exportar: ${esc(err.message || 'error desconocido')}</div>`);
+  }
+}
+
+$('svgBtn').onclick = () => exportPages('svg');
+$('png').onclick = () => exportPages('png');
 $('print').onclick = () => window.print();
 $('play').onclick = play;
 $('stop').onclick = stop;
