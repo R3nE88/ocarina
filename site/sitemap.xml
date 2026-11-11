@@ -4,4 +4,8 @@
     <loc>https://ocarina.forja-digital.com/</loc>
     <changefreq>monthly</changefreq>
   </url>
+  <url>
+    <loc>https://ocarina.forja-digital.com/comunidad</loc>
+    <changefreq>daily</changefreq>
+  </url>
 </urlset>
